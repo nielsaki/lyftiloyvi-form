@@ -8,12 +8,31 @@ function lf_get_fss_email() {
     return 'lyftiloyvi@fss.fo';
 }
 
+/**
+ * Logo URLs for the website (can be SVG).
+ */
 function lf_get_logo_urls() {
     return [
         'fss' => 'https://fss.fo/wp-content/uploads/2025/12/fss-logo.svg',
         'adf' => 'https://fss.fo/wp-content/uploads/2025/12/adf-logo.svg',
         'isf' => 'https://fss.fo/wp-content/uploads/2025/12/isf-logo.png',
     ];
+}
+
+/**
+ * Logo URLs for PDF only. Dompdf does NOT support SVG – use PNG or JPG.
+ * Default: same as lf_get_logo_urls() but .svg → .png for fss/adf.
+ * Upload fss-logo.png and adf-logo.png to the same folder on fss.fo, or
+ * override this in a child theme / mu-plugin, or place PNGs in plugin folder assets/logos/.
+ */
+function lf_get_logo_urls_for_pdf() {
+    $urls = lf_get_logo_urls();
+    foreach (['fss', 'adf'] as $key) {
+        if (isset($urls[$key]) && strtolower(substr($urls[$key], -4)) === '.svg') {
+            $urls[$key] = preg_replace('/\.svg$/i', '.png', $urls[$key]);
+        }
+    }
+    return $urls;
 }
 
 /**

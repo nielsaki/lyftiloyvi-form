@@ -5,6 +5,40 @@ if (!defined('ABSPATH')) {
 }
 
 /**
+ * Return logo sources for PDF: data URIs from local assets/logos/ or raster URLs.
+ * Dompdf does not support SVG – only PNG/JPG are used.
+ */
+function lf_get_pdf_logo_sources() {
+    $plugin_dir = dirname(__DIR__);
+    $logos_dir  = $plugin_dir . '/assets/logos';
+    $keys       = ['fss', 'adf', 'isf'];
+    $sources    = [];
+
+    foreach ($keys as $key) {
+        $path = $logos_dir . '/' . $key . '.png';
+        if (file_exists($path) && is_readable($path)) {
+            $raw  = file_get_contents($path);
+            $sources[$key] = 'data:image/png;base64,' . base64_encode($raw);
+        } else {
+            $sources[$key] = '';
+        }
+    }
+
+    $from_config = function_exists('lf_get_logo_urls_for_pdf') ? lf_get_logo_urls_for_pdf() : (function_exists('lf_get_logo_urls') ? lf_get_logo_urls() : []);
+    foreach ($keys as $key) {
+        if (!empty($sources[$key])) {
+            continue;
+        }
+        $url = $from_config[$key] ?? '';
+        if ($url !== '' && preg_match('/\.(png|jpe?g|gif)$/i', $url)) {
+            $sources[$key] = $url;
+        }
+    }
+
+    return $sources;
+}
+
+/**
  * Ger eina PDF-fílu við upplýsingum úr lyftiloyvisformin og returnerar stígin.
  * Krevur, at Dompdf er tøkt (t.d. via dompdf/autoload.inc.php í sama faldara).
  * Returnerar fullan filstíg ella null, um onki eydnast.
@@ -41,8 +75,9 @@ function lf_generate_pdf($data)
     $guardian_approved_by = $data['guardian_approved_by'] ?? '';
     $fss_approved_by      = $data['fss_approved_by'] ?? '';
 
-    // LOGO-URLS – tikin úr config
-    $logos = function_exists('lf_get_logo_urls') ? lf_get_logo_urls() : [];
+    // LOGO for PDF: Dompdf supports only raster (PNG/JPG), not SVG. Prefer local files
+    // in assets/logos/ (fss.png, adf.png, isf.png) or lf_get_logo_urls_for_pdf().
+    $logos = lf_get_pdf_logo_sources();
     $logo1 = $logos['fss'] ?? '';
     $logo2 = $logos['adf'] ?? '';
     $logo3 = $logos['isf'] ?? '';
