@@ -186,7 +186,7 @@ function lf_render_admin_page() {
             echo '<h2>Upplýsingar</h2>';
             echo '<table class="form-table"><tbody>';
             echo '<tr><th><label for="lf_name">Navn</label></th><td><input id="lf_name" name="name" type="text" class="regular-text" value="' . $name . '" required></td></tr>';
-            echo '<tr><th><label for="lf_birthdate">Føðingardagur</label></th><td><input id="lf_birthdate" name="birthdate" type="text" class="regular-text" value="' . $birthdate . '" placeholder="dd.mm.áááá"></td></tr>';
+            echo '<tr><th><label for="lf_birthdate">Føðingardagur (dd.mm.áááá)</label></th><td><input id="lf_birthdate" name="birthdate" type="text" class="regular-text" value="' . $birthdate . '" placeholder="dd.mm.áááá"></td></tr>';
             echo '<tr><th><label for="lf_email">Teldupostur</label></th><td><input id="lf_email" name="email" type="email" class="regular-text" value="' . $email . '"></td></tr>';
             echo '<tr><th><label for="lf_phone">Telefonnummar</label></th><td><input id="lf_phone" name="phone" type="text" class="regular-text" value="' . $phone . '"></td></tr>';
             echo '<tr><th><label for="lf_address">Bústaður</label></th><td><input id="lf_address" name="address" type="text" class="regular-text" value="' . $address . '"></td></tr>';
