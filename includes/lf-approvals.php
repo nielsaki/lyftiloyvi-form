@@ -77,6 +77,114 @@ function lf_request_fss_approval($row, $data) {
 }
 
 /**
+ * Send a fresh approval link to the club (chairman/board).
+ */
+function lf_admin_send_club_approval_link($row, $data) {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'lf_lyftiloyvi_requests';
+
+    $name  = $data['name'] ?? '';
+    $club  = $data['club'] ?? '';
+    $email = $data['email'] ?? '';
+
+    // Ensure we have a token
+    $token = !empty($row->token) ? $row->token : wp_generate_password(32, false, false);
+    if (empty($row->token)) {
+        $wpdb->update(
+            $table_name,
+            ['token' => $token],
+            ['id' => $row->id],
+            ['%s'],
+            ['%d']
+        );
+    }
+
+    // Build link
+    $approval_link = add_query_arg(
+        'lf_approve',
+        rawurlencode($token),
+        get_site_url()
+    );
+
+    // Subject/body – reuse helper if available
+    if (function_exists('lf_admin_build_subject')) {
+        $subject = lf_admin_build_subject($data, 'Góðkenning krevst (felag)');
+    } else {
+        $subject_parts = [];
+        if ($name) $subject_parts[] = $name;
+        if ($club) $subject_parts[] = '(' . $club . ')';
+        $subject_suffix = trim(implode(' ', $subject_parts));
+        $subject = $subject_suffix === '' ? 'Góðkenning krevst (felag)' : 'Góðkenning krevst (felag): ' . $subject_suffix;
+    }
+
+    $body  = "Ein umsókn um lyftiloyvi krevur góðkenning frá felagnum.\n\n";
+    $body .= "Navn: {$name}\n";
+    $body .= "Felag: {$club}\n";
+    $body .= "Teldupostur hjá íðkara: {$email}\n\n";
+    $body .= "Fyri at síggja umsóknina og góðkenna hana, klikk á hesa leinkju:\n";
+    $body .= $approval_link . "\n\n";
+    $body .= "Hetta er ein nýggj/uppaftur send leinkja send frá admin.\n";
+
+    $club_chair_emails = lf_get_club_chair_emails();
+    $chair_recipient = isset($club_chair_emails[$club]) ? $club_chair_emails[$club] : (function_exists('lf_get_fss_email') ? lf_get_fss_email() : 'lyftiloyvi@fss.fo');
+
+    $headers = [];
+    if (!empty($email) && is_email($email)) {
+        $headers[] = 'Reply-To: ' . $email;
+    }
+
+    return wp_mail($chair_recipient, $subject, $body, $headers);
+}
+
+/**
+ * Send a fresh approval link to the guardian.
+ */
+function lf_admin_send_guardian_approval_link($row, $data) {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'lf_lyftiloyvi_requests';
+
+    $is_minor       = !empty($data['is_minor']);
+    $name           = $data['name'] ?? '';
+    $guardian_email = $data['guardian_email'] ?? '';
+
+    if (!$is_minor || empty($guardian_email) || !is_email($guardian_email)) {
+        return false;
+    }
+
+    // Ensure we have a guardian token
+    $guardian_token = !empty($row->guardian_token) ? $row->guardian_token : wp_generate_password(32, false, false);
+    if (empty($row->guardian_token)) {
+        $wpdb->update(
+            $table_name,
+            ['guardian_token' => $guardian_token],
+            ['id' => $row->id],
+            ['%s'],
+            ['%d']
+        );
+    }
+
+    $guardian_approval_link = add_query_arg(
+        'lf_guardian_approve',
+        rawurlencode($guardian_token),
+        get_site_url()
+    );
+
+    if (function_exists('lf_admin_build_subject')) {
+        $subject = lf_admin_build_subject($data, 'Góðkenning krevst (verji)');
+    } else {
+        $subject = 'Góðkenning krevst (verji)';
+    }
+
+    $body  = "Tú ert skrásettur sum verji hjá {$name}.\n\n";
+    $body .= "Ein umsókn um lyftiloyvi krevur tína góðkenning sum verji.\n\n";
+    $body .= "Fyri at lesa váttanina og góðkenna hana, klikk á hesa leinkju:\n";
+    $body .= $guardian_approval_link . "\n\n";
+    $body .= "Hetta er ein nýggj/uppaftur send leinkja send frá admin.\n";
+
+    return wp_mail($guardian_email, $subject, $body);
+}
+
+/**
  * Finalize approval: generate final PDF, send to FSS, send receipts, update DB.
  */
 function lf_maybe_finalize($row, $data) {

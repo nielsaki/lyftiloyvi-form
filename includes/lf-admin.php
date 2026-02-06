@@ -121,6 +121,39 @@ function lf_render_admin_page() {
                 $message = $res['sent_any'] ? 'PDF er send aftur.' : 'Kundi ikki senda (kanna móttakarar / teldupost-skipan).';
             }
 
+            // Resend approval links (club / guardian / FSS)
+            if (isset($_POST['lf_admin_resend_links']) && isset($_POST['lf_admin_nonce']) && wp_verify_nonce($_POST['lf_admin_nonce'], 'lf_admin_edit')) {
+                $send_links_to = array_map('sanitize_text_field', (array)($_POST['send_links_to'] ?? []));
+
+                $sent_any_link = false;
+
+                if (in_array('club', $send_links_to, true) && function_exists('lf_admin_send_club_approval_link')) {
+                    if (lf_admin_send_club_approval_link($row, $data)) {
+                        $sent_any_link = true;
+                    }
+                }
+
+                if (in_array('guardian', $send_links_to, true) && function_exists('lf_admin_send_guardian_approval_link')) {
+                    if (lf_admin_send_guardian_approval_link($row, $data)) {
+                        $sent_any_link = true;
+                    }
+                }
+
+                if (in_array('fss', $send_links_to, true) && function_exists('lf_request_fss_approval')) {
+                    if (lf_request_fss_approval($row, $data)) {
+                        $sent_any_link = true;
+                    }
+                }
+
+                if ($sent_any_link) {
+                    $message = empty($message) ? 'Nýggj góðkenningar-link eru send.' : $message . ' Nýggj góðkenningar-link eru send.';
+                } else {
+                    if (empty($message)) {
+                        $message = 'Kundi ikki senda góðkenningar-link (kanna móttakarar / teldupost-skipan).';
+                    }
+                }
+            }
+
             // Reload freshest data
             $row = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d LIMIT 1", $edit_id));
             $data = maybe_unserialize($row->data);
@@ -196,6 +229,18 @@ function lf_render_admin_page() {
             echo '</p>';
             echo '</div>';
 
+            echo '<hr />';
+            echo '<h2>Send nýtt góðkenningar-link</h2>';
+            echo '<p>Her kann tú senda nýggj góðkenningar-link til felag, verjan og FSS, um tey hava mist uppruna teldupostin.</p>';
+            echo '<div style="max-width:760px;background:#fff;border:1px solid #ccd0d4;border-radius:6px;padding:12px 14px;margin-top:8px;">';
+            echo '<p><strong>Vel hvør skal fáa nýtt góðkenningar-link</strong></p>';
+            echo '<label style="display:block;margin:4px 0;"><input type="checkbox" name="send_links_to[]" value="club" checked> Felag (formans-teldupostur)</label>';
+            echo '<label style="display:block;margin:4px 0;"><input type="checkbox" name="send_links_to[]" value="guardian"' . (!empty($data['is_minor']) ? '' : ' disabled') . '> Verji</label>';
+            echo '<label style="display:block;margin:4px 0;"><input type="checkbox" name="send_links_to[]" value="fss"> FSS</label>';
+            echo '<p style="margin-top:10px;"><button type="submit" name="lf_admin_resend_links" value="1" class="button">Send góðkenningar-link</button></p>';
+            echo '<p><small>Verji-leinkjan er bara virkin, um umsóknin er markerað sum undir 18 ár og verju-upplýsingar eru fyltar út.</small></p>';
+            echo '</div>';
+
             echo '</form>';
 
             echo '<script>
@@ -243,7 +288,8 @@ function lf_render_admin_page() {
     );
 
     if ($exists === $table_name) {
-        $rows = $wpdb->get_results("SELECT * FROM {$table_name} ORDER BY created_at DESC LIMIT 100");
+        // Hent upp til 500 umsóknir og filtrera/paginera í PHP
+        $rows = $wpdb->get_results("SELECT * FROM {$table_name} ORDER BY created_at DESC LIMIT 500");
     }
 
     echo '<div class="wrap">';
@@ -255,8 +301,123 @@ function lf_render_admin_page() {
 
     echo '<p>Her sært tú seinastu umsóknirnar, sum eru sendar gjøgnum lyftiloyvisformið.</p>';
 
+    // Filter / search controls
+    $status_filter = isset($_GET['lf_status']) ? sanitize_text_field(wp_unslash($_GET['lf_status'])) : '';
+    $club_filter   = isset($_GET['lf_club']) ? sanitize_text_field(wp_unslash($_GET['lf_club'])) : '';
+    $minor_filter  = isset($_GET['lf_minor']) ? '1' : '';
+    $search_term   = isset($_GET['lf_search']) ? sanitize_text_field(wp_unslash($_GET['lf_search'])) : '';
+
+    $clubs_all = function_exists('lf_get_clubs') ? lf_get_clubs() : [];
+
+    echo '<form method="get" class="lf-admin-filters" style="margin:1em 0 1.5em 0;padding:8px 10px;background:#fff;border:1px solid #ccd0d4;border-radius:6px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">';
+    echo '<input type="hidden" name="page" value="lf-lyftiloyvi" />';
+
+    // Status filter
+    echo '<div>';
+    echo '<label for="lf_status"><strong>Støða</strong><br />';
+    echo '<select id="lf_status" name="lf_status">';
+    $status_options = [
+        ''            => 'Allar støður',
+        'pending'     => 'Bíðar',
+        'pending_fss' => 'Bíðar (FSS)',
+        'approved'    => 'Góðkent',
+        'denied'      => 'Noktað',
+    ];
+    foreach ($status_options as $val => $label) {
+        $sel = ($status_filter === $val) ? ' selected="selected"' : '';
+        echo '<option value="' . esc_attr($val) . '"' . $sel . '>' . esc_html($label) . '</option>';
+    }
+    echo '</select>';
+    echo '</label>';
+    echo '</div>';
+
+    // Club filter
+    echo '<div>';
+    echo '<label for="lf_club_filter"><strong>Felag</strong><br />';
+    echo '<select id="lf_club_filter" name="lf_club">';
+    echo '<option value="">' . esc_html__('Øll feløg', 'lf') . '</option>';
+    foreach ($clubs_all as $c) {
+        $sel = ($club_filter === $c) ? ' selected="selected"' : '';
+        echo '<option value="' . esc_attr($c) . '"' . $sel . '>' . esc_html($c) . '</option>';
+    }
+    echo '</select>';
+    echo '</label>';
+    echo '</div>';
+
+    // Minor filter
+    echo '<div>';
+    echo '<label><strong>Minniálitari</strong><br />';
+    echo '<input type="checkbox" name="lf_minor" value="1"' . ($minor_filter === '1' ? ' checked="checked"' : '') . ' /> ';
+    echo esc_html__('Vís bara undir 18 ár', 'lf');
+    echo '</label>';
+    echo '</div>';
+
+    // Search
+    echo '<div style="min-width:220px;flex:1 1 220px;">';
+    echo '<label for="lf_search"><strong>Leita</strong><br />';
+    echo '<input type="search" id="lf_search" name="lf_search" value="' . esc_attr($search_term) . '" class="regular-text" placeholder="Navn ella teldupostur" />';
+    echo '</label>';
+    echo '</div>';
+
+    echo '<div>';
+    echo '<button type="submit" class="button button-primary">Filtrera</button> ';
+    echo '<a href="' . esc_url(admin_url('admin.php?page=lf-lyftiloyvi')) . '" class="button">Nulstilla</a>';
+    echo '</div>';
+
+    echo '</form>';
+
     if (empty($rows)) {
         echo '<p>Ongar umsóknir funnar enn í ' . esc_html($table_name) . '.</p>';
+        echo '</div>';
+        return;
+    }
+
+    // Apply filters + pagination in PHP
+    $filtered = [];
+    foreach ($rows as $row) {
+        $data = maybe_unserialize($row->data);
+        if (!is_array($data)) {
+            $data = [];
+        }
+
+        $name  = $data['name'] ?? '';
+        $email = $data['email'] ?? '';
+        $club  = $data['club'] ?? '';
+        $is_minor = !empty($data['is_minor']);
+
+        if ($status_filter !== '' && $row->status !== $status_filter) {
+            continue;
+        }
+        if ($club_filter !== '' && $club !== $club_filter) {
+            continue;
+        }
+        if ($minor_filter === '1' && !$is_minor) {
+            continue;
+        }
+        if ($search_term !== '') {
+            $haystack = strtolower($name . ' ' . $email);
+            if (strpos($haystack, strtolower($search_term)) === false) {
+                continue;
+            }
+        }
+
+        $filtered[] = $row;
+    }
+
+    $per_page = 25;
+    $paged = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
+    $total_items = count($filtered);
+    $total_pages = max(1, (int)ceil($total_items / $per_page));
+
+    if ($paged > $total_pages) {
+        $paged = $total_pages;
+    }
+
+    $offset = ($paged - 1) * $per_page;
+    $paged_rows = array_slice($filtered, $offset, $per_page);
+
+    if (empty($paged_rows)) {
+        echo '<p>Ongar umsóknir samsvara teimum valdnu filturunum.</p>';
         echo '</div>';
         return;
     }
@@ -278,7 +439,7 @@ function lf_render_admin_page() {
     echo '<th>Strika</th>';
     echo '</tr></thead><tbody>';
 
-    foreach ($rows as $row) {
+    foreach ($paged_rows as $row) {
         $data = maybe_unserialize($row->data);
         if (!is_array($data)) {
             $data = [];
@@ -355,7 +516,39 @@ function lf_render_admin_page() {
     }
 
     echo '</tbody></table>';
-    echo '<p><small>Vísir upp til 100 seinastu umsóknirnar úr ' . esc_html($table_name) . '.</small></p>';
+
+    // Simple pagination
+    $base_args = [
+        'page'      => 'lf-lyftiloyvi',
+        'lf_status' => $status_filter,
+        'lf_club'   => $club_filter,
+        'lf_minor'  => $minor_filter === '1' ? '1' : '',
+        'lf_search' => $search_term,
+    ];
+
+    echo '<div class="tablenav"><div class="tablenav-pages" style="margin-top:8px;">';
+    echo '<span class="displaying-num">' . intval($total_items) . ' umsóknir funnar</span> ';
+    echo '<span class="pagination-links">';
+
+    if ($paged > 1) {
+        $prev_url = add_query_arg(array_merge($base_args, ['paged' => $paged - 1]), admin_url('admin.php'));
+        echo '<a class="prev-page button" href="' . esc_url($prev_url) . '">&laquo; Fyrra síða</a> ';
+    } else {
+        echo '<span class="tablenav-pages-navspan button disabled">&laquo; Fyrra síða</span> ';
+    }
+
+    echo '<span class="paging-input">' . intval($paged) . ' / <span class="total-pages">' . intval($total_pages) . '</span></span>';
+
+    if ($paged < $total_pages) {
+        $next_url = add_query_arg(array_merge($base_args, ['paged' => $paged + 1]), admin_url('admin.php'));
+        echo ' <a class="next-page button" href="' . esc_url($next_url) . '">Næsta síða &raquo;</a>';
+    } else {
+        echo ' <span class="tablenav-pages-navspan button disabled">Næsta síða &raquo;</span>';
+    }
+
+    echo '</span></div></div>';
+
+    echo '<p><small>Vísir upp til 500 seinastu umsóknirnar úr ' . esc_html($table_name) . ' (25 pr. síðu).</small></p>';
     echo '</div>';
 }
 
