@@ -226,12 +226,12 @@ function lf_render_form()
 
                     $chair_subject = 'Góðkenning krevst: ' . $subject;
 
-                    $chair_body  = "Ein nýggj umsókn um lyftiloyvi er móttikin og bíðar eftir góðkenning frá formanni.\n\n";
-                    $chair_body .= "Fulla navn á íðkara: {$name}\n";
+                    $chair_body  = "Ein nýggj umsókn um lyftiloyvi er móttikin og bíðar eftir góðkenning frá nevndarlimi ella øðrum parti við heimhildum.\n\n";
+                    $chair_body .= "Navn á íðkaranum: {$name}\n";
                     $chair_body .= "Felag: {$club}\n";
-                    $chair_body .= "Føðingardagur: {$birthdate}\n";
-                    $chair_body .= "Teldupostur hjá íðkara: {$email}\n";
-                    $chair_body .= "\nFyri at góðkenna umsóknina og senda hana víðari til Føroya Styrkisamband, klikk her:\n";
+                    $chair_body .= "Føðingardagur (dd.mm.áááá): {$birthdate}\n";
+                    $chair_body .= "Teldupostur hjá íðkaranum: {$email}\n";
+                    $chair_body .= "\nFyri at góðkenna umsóknina og senda hana víðari til Føroya Styrkisamband, trýst her:\n";
                     $chair_body .= $approval_link . "\n\n";
                     $chair_body .= "Tá felagið (og verji, um tað er neyðugt) hava góðkent, verður umsóknin send til FSS til endaliga góðkenning. Eftir tað fáa allir partar teldupost við endaliga PDF-skjalinum.\n";
 
@@ -256,7 +256,16 @@ function lf_render_form()
                     $fss_body .= $fss_approval_link . "\n\n";
                     $fss_body .= "Tá allir kravdir partar hava góðkent, verða endaligu teldupostarnir sendir við PDF-skjalinum.\n";
 
-                    $fss_sent = wp_mail(lf_get_fss_email(), $fss_subject, $fss_body, $headers, $attachments);
+                    $fss_recipient = lf_get_fss_email();
+                    $fss_sent = wp_mail($fss_recipient, $fss_subject, $fss_body, $headers, $attachments);
+
+                    if (!$fss_sent) {
+                        error_log(sprintf(
+                            'Lyftiloyvi: FSS teldupostur miseydnaðist. Móttakari: %s, Evni: %s',
+                            $fss_recipient,
+                            $fss_subject
+                        ));
+                    }
 
                     if ($sent) {
                         // Um íðkarin er undir 18 ár, send eisini serstakan góðkenningar-teldupost til verju
@@ -278,6 +287,9 @@ function lf_render_form()
                         }
 
                         $output .= '<div class="lf-success">Takk! Umsóknin er móttikin og er send til felagið til góðkenningar. Tá felagið (og verji, um tað er neyðugt) hava góðkent, verður hon send til Føroya Styrkisamband til endaliga góðkenning. Eftir tað fáa allir partar teldupost við endaliga PDF-skjalinum.</div>';
+                        if (!$fss_sent) {
+                            $output .= '<div class="lf-notice lf-notice-warning"><p><strong>Viðvaring:</strong> Teldupostur til FSS (lyftiloyvi@fss.fo) kundi ikki sendast. Umsóknin er tó goymd – FSS kann síggja og handtera umsóknirnar í stýringini á heimasíðuni. Vinarliga kanna teldupost-skipan (SMTP) og spam-mappuna.</p></div>';
+                        }
 
                         // Tøma felti eftir væl lukkaða innsending
                         $name = $email = $birthdate = $address = $city = $phone = $club = $date = $consent = $guardian_name = $guardian_email = $guardian_phone = '';

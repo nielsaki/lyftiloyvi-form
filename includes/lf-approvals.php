@@ -333,8 +333,7 @@ function lf_finalize_approval($row, $data) {
     }
 
     $body .= "\nLyftiloyvisváttan:\n";
-    $body .= "Lyftari váttar, at hann/henni yvirheldur galdandi reglur hjá ÍSF og altjóða styrkiítróttarsambondum, og\n";
-    $body .= "loyvir kanningar fyri doping sambært hesum reglum o.s.fr. (sí innlagda váttan á heimasíðuni).\n\n";
+    $body .= "Lyftari váttar, at hann ella hon yvirheldur galdandi reglur hjá ÍSF og altjóða styrkiítróttarsambondum, og loyvir kanningar fyri doping sambært hesum reglum o.s.fr. (sí innlagda váttan á heimasíðuni).\n\n";
 
     // Yvirlit yvir hvørjir partar hava fingið PDF-avritið
     $body .= "PDF-avrit av hesi váttan er sent til hesar partar:\n";
@@ -346,7 +345,7 @@ function lf_finalize_approval($row, $data) {
         $body .= "- Íðkarin (" . $email . ")\n";
     }
     if (!empty($guardian_email)) {
-        $body .= "- Verjin (" + $guardian_email . ")\n";
+        $body .= "- Verjin (" . $guardian_email . ")\n";
     }
     $body .= "\n";
 
@@ -492,13 +491,14 @@ function lf_handle_approval() {
         }
         // Goym navn á góðkennarum (felagið) í data
         $data['approved_by'] = $approved_by;
+        $data['club_approved_date'] = current_time('Y-m-d');
     } else {
         // Vís eitt lítið form, sum biður om navn á góðkennarum
         $form_html  = '<form method="post" style="max-width:480px;margin:2rem auto;font-family:system-ui,-apple-system,BlinkMacSystemFont,\'Segoe UI\',sans-serif;">';
         $form_html .= '<h2>Góðkenning av lyftiloyvi (felag)</h2>';
         $form_html .= $status_html;
         $form_html .= lf_build_application_summary_html($data);
-        $form_html .= '<p>Fyri at góðkenna hesa umsókn frá felagnum, skalt tú skriva navn á tann, sum góðkennir (formaður ella nevndarlimur):</p>';
+        $form_html .= '<p>Fyri at góðkenna hesa umsókn frá felagnum, skalt tú skriva navn á tann, sum góðkennir:</p>';
         $form_html .= '<p><label>Navn<br><input type="text" name="lf_approved_name" required style="width:100%;padding:0.5rem;"></label></p>';
         $form_html .= '<p style="margin-top:0.5rem;"><label style="font-weight:600;">Nokta við viðmerking</label><br>';
         $form_html .= '<textarea name="lf_deny_reason" rows="3" style="width:100%;padding:0.5rem;" placeholder="Skriva hví lyftiloyvið verður nokta..."></textarea></p>';
@@ -529,7 +529,7 @@ function lf_handle_approval() {
         wp_die('<p>Takk! Tú hevur góðkent umsóknina. Allir kravdir partar hava nú góðkent, og endaligu teldupostarnir eru sendir við PDF-skjalinum.</p>', 'Lyftiloyvi', ['response' => 200]);
     }
 
-    wp_die('<p>Takk! Tú hevur góðkent umsóknina frá felagnum. Umsóknin bíðar nú eftir hinum góðkenningunum.</p>', 'Lyftiloyvi', ['response' => 200]);
+    wp_die('<p>Takk! Tú hevur góðkent umsóknina vegna felagnum. Umsóknin bíðar nú eftir hinum góðkenningunum.</p>', 'Lyftiloyvi', ['response' => 200]);
 }
 add_action('template_redirect', 'lf_handle_approval');
 
@@ -619,6 +619,7 @@ function lf_handle_guardian_approval() {
         }
         // Goym navn á verjanum í data
         $data['guardian_approved_by'] = $guardian_approved_by;
+        $data['guardian_approved_date'] = current_time('Y-m-d');
     } else {
 
         // Vís eitt lítið form til verjan
@@ -626,7 +627,7 @@ function lf_handle_guardian_approval() {
         $form_html .= '<h2>Góðkenning av lyftiloyvi (verji)</h2>';
         $form_html .= $status_html;
         $form_html .= lf_build_application_summary_html($data);
-        $form_html .= '<p>Les allar upplýsingarnar ígjøggnum, og síðani góðkenn sum verji hjá' . esc_html($name) . '.</p>';
+        $form_html .= '<p>Les allar upplýsingarnar ígjøggnum, og tryggja tær at alt er rætt. Síðani góðkenn sum verji hjá ' . esc_html($name) . '.</p>';
         $form_html .= '<form method="post" style="margin-top:1rem;">';
         $form_html .= '<p><label>Navn<br><input type="text" name="lf_approved_name" required style="width:100%;padding:0.5rem;"></label></p>';
         $form_html .= '<p style="margin-top:0.5rem;"><label style="font-weight:600;">Nokta við viðmerking</label><br>';
@@ -746,6 +747,7 @@ function lf_handle_fss_approval() {
         }
 
         $data['fss_approved_by'] = $fss_approved_by;
+        $data['fss_approved_date'] = current_time('Y-m-d');
 
         $wpdb->update(
             $table_name,

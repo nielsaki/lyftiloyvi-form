@@ -154,6 +154,22 @@ function lf_render_admin_page() {
                 }
             }
 
+            // Regenerate PDF
+            if (isset($_POST['lf_admin_regenerate_pdf']) && isset($_POST['lf_admin_nonce']) && wp_verify_nonce($_POST['lf_admin_nonce'], 'lf_admin_edit')) {
+                // Delete old PDF if exists
+                if (!empty($row->pdf_path) && file_exists($row->pdf_path)) {
+                    @unlink($row->pdf_path);
+                }
+                // Generate new PDF
+                $new_pdf = lf_generate_pdf($data);
+                if ($new_pdf && file_exists($new_pdf)) {
+                    $wpdb->update($table_name, ['pdf_path' => $new_pdf], ['id' => $row->id], ['%s'], ['%d']);
+                    $message = 'PDF er endurgjørd.';
+                } else {
+                    $message = 'Kundi ikki endurgera PDF.';
+                }
+            }
+
             // Reload freshest data
             $row = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d LIMIT 1", $edit_id));
             $data = maybe_unserialize($row->data);
@@ -208,6 +224,11 @@ function lf_render_admin_page() {
             echo '</tbody></table>';
 
             echo '<p><button type="submit" name="lf_admin_save" value="1" class="button button-primary">Goym broytingar</button></p>';
+
+            echo '<hr />';
+            echo '<h2>Endurgera PDF</h2>';
+            echo '<p>Strikar gomlu PDF og ger eina nýggja við nýverandi upplýsingum.</p>';
+            echo '<p><button type="submit" name="lf_admin_regenerate_pdf" value="1" class="button" onclick="return confirm(\'Ert tú viss(ur)? Gomlu PDF-fílan verður strikað og ein nýggj gjørd.\');">Endurgera PDF</button></p>';
 
             echo '<hr />';
             echo '<h2>Send PDF aftur</h2>';

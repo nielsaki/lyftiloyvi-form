@@ -155,6 +155,17 @@ function lf_enqueue_styles()
     .lf-error li {
         margin: 0.15rem 0;
     }
+    .lf-notice {
+        padding: 0.6em 0.9em;
+        margin: 1rem auto;
+        border-radius: 4px;
+        max-width: 900px;
+    }
+    .lf-notice-warning {
+        border: 1px solid #f9a825;
+        background: #fff8e1;
+        color: #7c4a03;
+    }
     @media (max-width: 600px) {
         .lf-form {
             margin: 1.5rem 1rem 2.5rem;

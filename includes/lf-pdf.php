@@ -74,6 +74,9 @@ function lf_generate_pdf($data)
     $approved_by          = $data['approved_by'] ?? '';
     $guardian_approved_by = $data['guardian_approved_by'] ?? '';
     $fss_approved_by      = $data['fss_approved_by'] ?? '';
+    $club_approved_date    = $data['club_approved_date'] ?? '';
+    $guardian_approved_date = $data['guardian_approved_date'] ?? '';
+    $fss_approved_date     = $data['fss_approved_date'] ?? '';
 
     // LOGO for PDF: Dompdf supports only raster (PNG/JPG), not SVG. Prefer local files
     // in assets/logos/ (fss.png, adf.png, isf.png) or lf_get_logo_urls_for_pdf().
@@ -138,13 +141,13 @@ function lf_generate_pdf($data)
         $html .= '<h2>Góðkenning</h2>';
         $html .= '<table>';
         if (!empty($approved_by)) {
-            $html .= '<tr><th>Góðkent av (formanni/nevdarlimi)</th><td>' . htmlspecialchars($approved_by, ENT_QUOTES, 'UTF-8') . '</td></tr>';
+            $html .= '<tr><th>Góðkent av (formanni/nevdarlimi)</th><td>' . htmlspecialchars($approved_by . ($club_approved_date !== '' ? ' (' . $club_approved_date . ')' : ''), ENT_QUOTES, 'UTF-8') . '</td></tr>';
         }
         if (!empty($guardian_approved_by)) {
-            $html .= '<tr><th>Góðkent av verjanum</th><td>' . htmlspecialchars($guardian_approved_by, ENT_QUOTES, 'UTF-8') . '</td></tr>';
+            $html .= '<tr><th>Góðkent av verjanum</th><td>' . htmlspecialchars($guardian_approved_by . ($guardian_approved_date !== '' ? ' (' . $guardian_approved_date . ')' : ''), ENT_QUOTES, 'UTF-8') . '</td></tr>';
         }
         if (!empty($fss_approved_by)) {
-            $html .= '<tr><th>Góðkent av FSS</th><td>' . htmlspecialchars($fss_approved_by, ENT_QUOTES, 'UTF-8') . '</td></tr>';
+            $html .= '<tr><th>Góðkent av FSS</th><td>' . htmlspecialchars($fss_approved_by . ($fss_approved_date !== '' ? ' (' . $fss_approved_date . ')' : ''), ENT_QUOTES, 'UTF-8') . '</td></tr>';
         }
         $html .= '</table>';
         $html .= '</div>';
@@ -160,7 +163,7 @@ function lf_generate_pdf($data)
 
     // Filnavn: "<name> - <date>.pdf" (safe for filesystem)
     $date_for_filename = $date !== '' ? $date : date('Y-m-d');
-    $filename_raw = trim($name) . ' - ' . $date_for_filename . '.pdf';
+    $filename_raw = trim($name) . ' - ' . $date_for_filename . '-' . substr(md5(microtime(true)), 0, 6) . '.pdf';
     $filename = sanitize_file_name($filename_raw);
     $filepath = trailingslashit($upload_dir['path']) . $filename;
 
