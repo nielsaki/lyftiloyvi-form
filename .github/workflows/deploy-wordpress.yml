@@ -1,0 +1,47 @@
+# Deploy this plugin folder to your WordPress server on every push to main/master.
+#
+# 1. Create a GitHub repository and push this project (see instructions in the PR / chat).
+# 2. In the GitHub repo: Settings → Secrets and variables → Actions → New repository secret:
+#    - FTP_SERVER    (e.g. ftp.yourhost.com or your server IP)
+#    - FTP_USERNAME
+#    - FTP_PASSWORD  (or app-specific password if your host supports it)
+#    - FTP_REMOTE_DIR  (full path on the server to the plugin folder, must end with /)
+#      Example: /public_html/wp-content/plugins/lyftiloyvi-form/
+#      Or: /domains/example.fo/public_html/wp-content/plugins/lyftiloyvi-form/
+#
+# 3. Adjust "branches" below if you use a different default branch.
+#
+# If your host only offers SFTP (not FTP), use an SFTP/rsync deploy action instead,
+# or pull on the server with git (see alternative in repo docs if you add one).
+
+name: Deploy to WordPress
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy plugin via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_REMOTE_DIR }}
+          local-dir: ./
+          log-level: minimal
+          exclude: |
+            **/.git*
+            **/.github/**
+            **/.DS_Store
+            test_db.json
+            test_pdfs/**
+            test.php

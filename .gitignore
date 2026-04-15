@@ -1,3 +1,6 @@
 # macOS
 .DS_Store
- 
+
+# Test artifacts
+test_db.json
+test_pdfs/
