@@ -11,8 +11,10 @@
 #
 # 3. Adjust "branches" below if you use a different default branch.
 #
-# If your host only offers SFTP (not FTP), use an SFTP/rsync deploy action instead,
-# or pull on the server with git (see alternative in repo docs if you add one).
+# test.php lives in Git for local testing but is NOT uploaded (exclude list).
+# It also refuses to run under a normal web server if placed inside WordPress.
+#
+# If your host only offers SFTP (not FTP), use an SFTP/rsync deploy action instead.
 
 name: Deploy to WordPress
 
