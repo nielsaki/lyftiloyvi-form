@@ -4,3 +4,6 @@
 # Test artifacts
 test_db.json
 test_pdfs/
+
+# Local zip exports
+*.zip

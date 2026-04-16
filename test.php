@@ -176,6 +176,14 @@ function wp_mail($to, $subject, $body, $headers = [], $attachments = []) {
     return true;
 }
 
+// ─── Options API stub (lf-clubs.php uses get_option for saved club emails) ───
+
+if (!function_exists('get_option')) {
+    function get_option($option, $default = false) {
+        return $default;
+    }
+}
+
 // ─── Load plugin logic ───────────────────────────────────────────────────────
 
 require_once __DIR__ . '/includes/lf-config.php';

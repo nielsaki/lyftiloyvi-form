@@ -17,8 +17,68 @@ function lf_register_admin_menu() {
         'dashicons-forms',
         26
     );
+
+    add_submenu_page(
+        'lf-lyftiloyvi',
+        'Felagsteldupostir',
+        'Felagsteldupostir',
+        'manage_options',
+        'lf-club-emails',
+        'lf_render_club_emails_settings_page'
+    );
 }
 add_action('admin_menu', 'lf_register_admin_menu');
+
+/**
+ * Stillingar: teldupostur til formann/nevnd hjá hvørjum felagi (góðkenningarleinkja).
+ */
+function lf_render_club_emails_settings_page() {
+    if (!current_user_can('manage_options')) {
+        wp_die(__('Tú hevur ikki rættindi at síggja hesa síðuna.', 'lf'));
+    }
+
+    $defaults = function_exists('lf_get_club_chair_emails_defaults') ? lf_get_club_chair_emails_defaults() : [];
+    $saved    = get_option('lf_club_chair_emails', []);
+    if (!is_array($saved)) {
+        $saved = [];
+    }
+
+    if (isset($_POST['lf_club_emails_save']) && isset($_POST['lf_club_emails_nonce']) && wp_verify_nonce($_POST['lf_club_emails_nonce'], 'lf_club_emails_save')) {
+        $out = [];
+        foreach (lf_get_clubs() as $club) {
+            $val = isset($_POST['lf_club_email'][ $club ]) ? sanitize_email(wp_unslash($_POST['lf_club_email'][ $club ])) : '';
+            $out[ $club ] = $val;
+        }
+        update_option('lf_club_chair_emails', $out, false);
+        $saved = $out;
+        echo '<div class="notice notice-success is-dismissible"><p>Teldupostir eru goymdir.</p></div>';
+    }
+
+    echo '<div class="wrap">';
+    echo '<h1>Felagsteldupostir</h1>';
+    echo '<p>Set teldupost, har góðkenningarleinkjan fyri lyftiloyvi skal sendast til hvørt felag. Tómt felt brúkar sjálvgevið (sjá undir hvørjum felti).</p>';
+
+    echo '<form method="post" action="">';
+    wp_nonce_field('lf_club_emails_save', 'lf_club_emails_nonce');
+
+    echo '<table class="form-table" role="presentation">';
+    foreach (lf_get_clubs() as $club) {
+        $def = isset($defaults[ $club ]) ? $defaults[ $club ] : '';
+        $val = isset($saved[ $club ]) ? $saved[ $club ] : '';
+        echo '<tr>';
+        echo '<th scope="row"><label for="lf_ce_' . esc_attr(md5($club)) . '">' . esc_html($club) . '</label></th>';
+        echo '<td>';
+        echo '<input type="email" class="regular-text" id="lf_ce_' . esc_attr(md5($club)) . '" name="lf_club_email[' . esc_attr($club) . ']" value="' . esc_attr($val) . '" placeholder="' . esc_attr($def) . '" />';
+        echo '<p class="description">Sjálvgevið: <code>' . esc_html($def) . '</code></p>';
+        echo '</td>';
+        echo '</tr>';
+    }
+    echo '</table>';
+
+    submit_button('Goym', 'primary', 'lf_club_emails_save');
+    echo '</form>';
+    echo '</div>';
+}
 
 /**
  * Render admin-síðu við yvirliti yvir seinastu umsóknirnar.
