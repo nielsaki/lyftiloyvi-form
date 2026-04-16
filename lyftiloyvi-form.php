@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Lyftiloyvi Form
  * Description: Online-Form til lyftiloyvi, sum sendir teldupost til FSS og felagið.
- * Version: 1.2.0
+ * Version: 1.2.1
  * Author: Niels Áki Mørk
  */
 
