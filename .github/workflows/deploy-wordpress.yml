@@ -23,6 +23,7 @@ on:
     branches:
       - main
       - master
+  workflow_dispatch:   # Actions tab → Deploy to WordPress → Run workflow (no new commit needed)
 
 jobs:
   deploy:
@@ -47,3 +48,4 @@ jobs:
             test_db.json
             test_pdfs/**
             test.php
+ 
