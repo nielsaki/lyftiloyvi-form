@@ -15,6 +15,10 @@
 # It also refuses to run under a normal web server if placed inside WordPress.
 #
 # If your host only offers SFTP (not FTP), use an SFTP/rsync deploy action instead.
+#
+# Why the first deploy feels slow: FTP uploads many small files one-by-one. Dompdf’s
+# vendor tree is large. After the first successful run, FTP-Deploy-Action keeps a
+# sync state on the server and later pushes mostly only changed files (much faster).
 
 name: Deploy to WordPress
 
@@ -48,4 +52,13 @@ jobs:
             test_db.json
             test_pdfs/**
             test.php
+            **/vendor/**/phpunit.xml*
+            **/vendor/**/*.md
+            **/vendor/**/LICENSE*
+            **/vendor/**/CHANGELOG*
+            **/vendor/**/UPGRADING*
+            **/vendor/**/AUTHORS*
+            **/vendor/**/CREDITS*
+            **/vendor/**/RELEASE.md
+            **/vendor/**/bin/**
  
