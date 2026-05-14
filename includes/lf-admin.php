@@ -91,7 +91,97 @@ function lf_render_admin_page() {
     global $wpdb;
     $table_name = $wpdb->prefix . 'lf_lyftiloyvi_requests';
 
-    $message = '';
+    $message           = '';
+    $bulk_notice_key   = 'lf_bulk_notice_' . get_current_user_id();
+    $bulk_notice_flash = get_transient($bulk_notice_key);
+    if ($bulk_notice_flash !== false) {
+        delete_transient($bulk_notice_key);
+        if (is_string($bulk_notice_flash)) {
+            $message = $bulk_notice_flash;
+        }
+    }
+
+    // Margfeldis-handling (ikk í rætta-sýnin)
+    if (
+        !isset($_GET['edit_id']) &&
+        isset($_POST['lf_bulk_submit']) &&
+        isset($_POST['lf_bulk_nonce']) &&
+        wp_verify_nonce(wp_unslash($_POST['lf_bulk_nonce']), 'lf_bulk_requests')
+    ) {
+        $bulk_action = isset($_POST['lf_bulk_action']) ? sanitize_text_field(wp_unslash($_POST['lf_bulk_action'])) : '';
+        $bulk_ids    = isset($_POST['lf_bulk_ids']) ? array_map('intval', (array) wp_unslash($_POST['lf_bulk_ids'])) : [];
+        $bulk_ids    = array_values(array_unique(array_filter($bulk_ids, static function ($id) {
+            return $id > 0;
+        })));
+
+        $redirect_args = [
+            'page'       => 'lf-lyftiloyvi',
+            'lf_status'  => isset($_POST['lf_keep_status']) ? sanitize_text_field(wp_unslash($_POST['lf_keep_status'])) : '',
+            'lf_club'    => isset($_POST['lf_keep_club']) ? sanitize_text_field(wp_unslash($_POST['lf_keep_club'])) : '',
+            'lf_search'  => isset($_POST['lf_keep_search']) ? sanitize_text_field(wp_unslash($_POST['lf_keep_search'])) : '',
+            'lf_minor'   => !empty($_POST['lf_keep_minor']) ? '1' : '',
+            'paged'      => isset($_POST['lf_keep_paged']) ? max(1, intval(wp_unslash($_POST['lf_keep_paged']))) : 1,
+        ];
+
+        $bulk_notice_msg = '';
+        if ($bulk_action === '' || empty($bulk_ids)) {
+            $bulk_notice_msg = 'Vel handling og minst ein røð.';
+        } elseif ($bulk_action === 'delete') {
+            $deleted_n = 0;
+            foreach ($bulk_ids as $bid) {
+                if ($wpdb->delete($table_name, ['id' => $bid], ['%d'])) {
+                    $deleted_n++;
+                }
+            }
+            $bulk_notice_msg = $deleted_n === 1
+                ? 'Ein umsókn er strikað.'
+                : sprintf('%d umsóknir eru strikaðar.', $deleted_n);
+        } elseif ($bulk_action === 'clear_club_approval') {
+            $updated_n = 0;
+            foreach ($bulk_ids as $bid) {
+                $brow = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d LIMIT 1", $bid));
+                if (!$brow) {
+                    continue;
+                }
+                $bdata = maybe_unserialize($brow->data);
+                if (!is_array($bdata)) {
+                    $bdata = [];
+                }
+                $bdata['approved_by']       = '';
+                $bdata['club_approved_date'] = '';
+
+                $new_status = $brow->status;
+                if ($brow->status === 'approved' || $brow->status === 'pending_fss') {
+                    $new_status = 'pending';
+                }
+
+                $upd = $wpdb->update(
+                    $table_name,
+                    [
+                        'data'   => maybe_serialize($bdata),
+                        'status' => $new_status,
+                    ],
+                    ['id' => $bid],
+                    ['%s', '%s'],
+                    ['%d']
+                );
+                if ($upd !== false) {
+                    $updated_n++;
+                }
+            }
+            $bulk_notice_msg = $updated_n === 1
+                ? '«Góðkent av felagi» er strikað á einari røð.'
+                : sprintf('«Góðkent av felagi» er strikað á %d røðum.', $updated_n);
+        } else {
+            $bulk_notice_msg = 'Ókend handling.';
+        }
+
+        set_transient($bulk_notice_key, $bulk_notice_msg, 60);
+        wp_safe_redirect(add_query_arg(array_filter($redirect_args, static function ($v) {
+            return $v !== '' && $v !== null;
+        }), admin_url('admin.php')));
+        exit;
+    }
 
     // Edit view
     if (isset($_GET['edit_id'])) {
@@ -561,9 +651,33 @@ function lf_render_admin_page() {
         return;
     }
 
+    echo '<form method="post" class="lf-bulk-requests-form" action="' . esc_url(admin_url('admin.php')) . '">';
+    echo '<input type="hidden" name="page" value="lf-lyftiloyvi" />';
+    wp_nonce_field('lf_bulk_requests', 'lf_bulk_nonce');
+    echo '<input type="hidden" name="lf_keep_status" value="' . esc_attr($status_filter) . '" />';
+    echo '<input type="hidden" name="lf_keep_club" value="' . esc_attr($club_filter) . '" />';
+    echo '<input type="hidden" name="lf_keep_search" value="' . esc_attr($search_term) . '" />';
+    echo '<input type="hidden" name="lf_keep_paged" value="' . intval($paged) . '" />';
+    if ($minor_filter === '1') {
+        echo '<input type="hidden" name="lf_keep_minor" value="1" />';
+    }
+
+    echo '<div class="tablenav top">';
+    echo '<div class="alignleft actions bulkactions" style="padding-bottom:8px;">';
+    echo '<label for="lf-bulk-action" class="screen-reader-text">Margfeldis-handling</label>';
+    echo '<select name="lf_bulk_action" id="lf-bulk-action">';
+    echo '<option value="">Vel handling…</option>';
+    echo '<option value="clear_club_approval">Strika «góðkent av felagi»</option>';
+    echo '<option value="delete">Strika umsóknir</option>';
+    echo '</select> ';
+    echo '<button type="submit" name="lf_bulk_submit" value="1" class="button action">Ger</button>';
+    echo '</div>';
+    echo '</div>';
+
     echo '<table class="widefat fixed striped">';
     echo '<thead><tr>';
-    echo '<th>ID</th>';
+    echo '<th scope="col" id="lf-cb-column" class="manage-column column-cb check-column"><label class="screen-reader-text" for="lf-bulk-select-all">Vel alla</label><input id="lf-bulk-select-all" type="checkbox" /></th>';
+    echo '<th scope="col">ID</th>';
     echo '<th>Dagur</th>';
     echo '<th>Navn</th>';
     echo '<th>Felag</th>';
@@ -618,6 +732,7 @@ function lf_render_admin_page() {
         }
 
         echo '<tr>';
+        echo '<th scope="row" class="check-column"><input type="checkbox" name="lf_bulk_ids[]" class="lf-bulk-row-cb" value="' . intval($row->id) . '" /></th>';
         echo '<td>' . intval($row->id) . '</td>';
         echo '<td>' . esc_html($row->created_at) . '</td>';
         echo '<td>' . esc_html($name) . '</td>';
@@ -659,19 +774,53 @@ function lf_render_admin_page() {
         echo '<a class="button button-small" href="' . esc_url($edit_url) . '">Rætta</a>';
         echo '</td>';
 
-        // Lítill formur til at strika hesa røðina
         echo '<td>';
-        echo '<form method="post" style="display:inline;" onsubmit="return confirm(\'Ert tú viss(ur) í, at tú vilt strika hesa umsóknina? Hetta kann ikki angraðast.\');">';
-        echo '<input type="hidden" name="lf_delete_request" value="1" />';
-        echo '<input type="hidden" name="lf_delete_id" value="' . intval($row->id) . '" />';
-        echo '<button type="submit" class="button button-small button-link-delete">Strika</button>';
-        echo '</form>';
+        $del_confirm_js = esc_js('Ert tú viss(ur) í, at tú vilt strika hesa umsóknina? Hetta kann ikki angraðast.');
+        echo '<button type="submit" form="lf-single-delete-form" class="button button-small button-link-delete" onclick="if(!confirm(\'' . $del_confirm_js . '\'))return false;document.getElementById(\'lf-single-delete-id\').value=\'' . intval($row->id) . '\';return true;">Strika</button>';
         echo '</td>';
 
         echo '</tr>';
     }
 
     echo '</tbody></table>';
+
+    echo '</form>';
+
+    echo '<form id="lf-single-delete-form" method="post" action="' . esc_url(admin_url('admin.php')) . '" style="display:none;">';
+    echo '<input type="hidden" name="page" value="lf-lyftiloyvi" />';
+    echo '<input type="hidden" name="lf_delete_request" value="1" />';
+    echo '<input type="hidden" name="lf_delete_id" id="lf-single-delete-id" value="" />';
+    echo '</form>';
+
+    echo '<script>
+    (function(){
+        var bulkForm = document.querySelector(".lf-bulk-requests-form");
+        if(bulkForm){
+            bulkForm.addEventListener("submit", function(e){
+                var sel = document.getElementById("lf-bulk-action");
+                var action = sel ? sel.value : "";
+                var boxes = bulkForm.querySelectorAll(".lf-bulk-row-cb:checked");
+                if(!action || !boxes.length){
+                    e.preventDefault();
+                    alert("Vel handling og minst ein røð.");
+                    return;
+                }
+                if(action==="delete"){
+                    if(!confirm("Ert tú viss(ur)? Valdu umsóknir verða strikaðar og kunnu ikki endurgevnast.")){ e.preventDefault(); }
+                }
+                if(action==="clear_club_approval"){
+                    if(!confirm("Strika «góðkent av felagi» hjá øllum valdum røðum? Har støðan er «Góðkent» ella «Bíðar (FSS)», verður hon sett til «Bíðar».")){ e.preventDefault(); }
+                }
+            });
+            var allCb = document.getElementById("lf-bulk-select-all");
+            if(allCb){
+                allCb.addEventListener("change", function(){
+                    bulkForm.querySelectorAll(".lf-bulk-row-cb").forEach(function(cb){ cb.checked = allCb.checked; });
+                });
+            }
+        }
+    })();
+    </script>';
 
     echo '<dialog id="lf-denial-comment-dialog" style="border:1px solid #c3c4c7;border-radius:4px;padding:0;max-width:min(560px,92vw);box-shadow:0 5px 15px rgba(0,0,0,.2);">';
     echo '<div style="padding:16px 18px;">';
