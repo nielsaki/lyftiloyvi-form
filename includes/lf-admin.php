@@ -605,14 +605,26 @@ function lf_render_admin_page() {
         echo '<td>' . esc_html($name) . '</td>';
         echo '<td>' . esc_html($club) . '</td>';
         echo '<td>' . esc_html($status_label) . '</td>';
-        $denied_label = '';
+        echo '<td>';
         if ($row->status === 'denied') {
-            $denied_label = trim($denied_role . ($denied_by ? ' (' . $denied_by . ')' : ''));
-            if (!empty($denied_reason)) {
-                $denied_label .= ' – ' . $denied_reason;
+            $denied_header = trim($denied_role . ($denied_by ? ' (' . $denied_by . ')' : ''));
+            $has_denial_detail = ($denied_header !== '' || $denied_reason !== '');
+            if ($has_denial_detail) {
+                $denial_payload = wp_json_encode(
+                    [
+                        'header' => $denied_header,
+                        'reason' => $denied_reason,
+                    ],
+                    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
+                );
+                echo '<button type="button" class="button-link lf-denial-comment-trigger" data-denial="' . esc_attr($denial_payload) . '" style="color:#2271b1;padding:0;border:0;background:none;cursor:pointer;font:inherit;text-decoration:underline;">'
+                    . esc_html('Viðmerking')
+                    . '</button>';
+            } else {
+                echo '&ndash;';
             }
         }
-        echo '<td>' . esc_html($denied_label) . '</td>';
+        echo '</td>';
         echo '<td>' . esc_html($minor_label) . '</td>';
         echo '<td>' . esc_html($approved_by) . '</td>';
         echo '<td>' . esc_html($guardian_approved_by) . '</td>';
@@ -642,6 +654,34 @@ function lf_render_admin_page() {
     }
 
     echo '</tbody></table>';
+
+    echo '<dialog id="lf-denial-comment-dialog" style="border:1px solid #c3c4c7;border-radius:4px;padding:0;max-width:min(560px,92vw);box-shadow:0 5px 15px rgba(0,0,0,.2);">';
+    echo '<div style="padding:16px 18px;">';
+    echo '<div id="lf-denial-comment-meta" style="margin:0 0 12px;color:#646970;"></div>';
+    echo '<div id="lf-denial-comment-text" style="margin:0;white-space:pre-wrap;line-height:1.45;"></div>';
+    echo '</div>';
+    echo '<form method="dialog" style="padding:12px 18px;background:#f6f7f7;border-top:1px solid #c3c4c7;margin:0;display:flex;justify-content:flex-end;"><button type="submit" class="button button-primary">Lukka</button></form>';
+    echo '</dialog>';
+    echo '<script>
+    (function(){
+        var dlg = document.getElementById("lf-denial-comment-dialog");
+        var meta = document.getElementById("lf-denial-comment-meta");
+        var txt = document.getElementById("lf-denial-comment-text");
+        if (!dlg || !meta || !txt) return;
+        document.querySelectorAll(".lf-denial-comment-trigger").forEach(function(btn){
+            btn.addEventListener("click", function(){
+                var raw = btn.getAttribute("data-denial");
+                if (!raw) return;
+                var d;
+                try { d = JSON.parse(raw); } catch (e) { return; }
+                meta.textContent = d.header || "";
+                meta.style.display = (d.header && String(d.header).trim() !== "") ? "block" : "none";
+                txt.textContent = d.reason || "";
+                if (typeof dlg.showModal === "function") dlg.showModal();
+            });
+        });
+    })();
+    </script>';
 
     // Simple pagination
     $base_args = [
