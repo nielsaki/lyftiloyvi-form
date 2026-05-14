@@ -124,6 +124,20 @@ function lf_render_admin_page() {
                 $data['guardian_email']  = sanitize_email($_POST['guardian_email'] ?? '');
                 $data['guardian_phone']  = sanitize_text_field($_POST['guardian_phone'] ?? '');
 
+                // Dates & approvals (PDF / goymd data)
+                $data['date'] = sanitize_text_field($_POST['submission_date'] ?? '');
+                $data['approved_by'] = sanitize_text_field($_POST['approved_by'] ?? '');
+                $data['club_approved_date'] = sanitize_text_field($_POST['club_approved_date'] ?? '');
+                $data['fss_approved_by'] = sanitize_text_field($_POST['fss_approved_by'] ?? '');
+                $data['fss_approved_date'] = sanitize_text_field($_POST['fss_approved_date'] ?? '');
+                if (!empty($data['is_minor'])) {
+                    $data['guardian_approved_by'] = sanitize_text_field($_POST['guardian_approved_by'] ?? '');
+                    $data['guardian_approved_date'] = sanitize_text_field($_POST['guardian_approved_date'] ?? '');
+                } else {
+                    $data['guardian_approved_by'] = '';
+                    $data['guardian_approved_date'] = '';
+                }
+
                 // Simple validation for club
                 if (!in_array($data['club'], $clubs, true)) {
                     $data['club'] = '';
@@ -259,6 +273,14 @@ function lf_render_admin_page() {
             $gemail = esc_attr($data['guardian_email'] ?? '');
             $gphone = esc_attr($data['guardian_phone'] ?? '');
 
+            $submission_date            = esc_attr($data['date'] ?? '');
+            $approved_by_val            = esc_attr($data['approved_by'] ?? '');
+            $club_approved_date_val    = esc_attr($data['club_approved_date'] ?? '');
+            $guardian_approved_by_val   = esc_attr($data['guardian_approved_by'] ?? '');
+            $guardian_approved_date_val = esc_attr($data['guardian_approved_date'] ?? '');
+            $fss_approved_by_val        = esc_attr($data['fss_approved_by'] ?? '');
+            $fss_approved_date_val      = esc_attr($data['fss_approved_date'] ?? '');
+
             echo '<h2>Upplýsingar</h2>';
             echo '<table class="form-table"><tbody>';
             echo '<tr><th><label for="lf_name">Navn</label></th><td><input id="lf_name" name="name" type="text" class="regular-text" value="' . $name . '" required></td></tr>';
@@ -281,13 +303,26 @@ function lf_render_admin_page() {
             echo '<tr><th><label for="lf_gemail">Verji teldupostur</label></th><td><input id="lf_gemail" name="guardian_email" type="email" class="regular-text" value="' . $gemail . '"></td></tr>';
             echo '<tr><th><label for="lf_gphone">Verji telefonnummar</label></th><td><input id="lf_gphone" name="guardian_phone" type="text" class="regular-text" value="' . $gphone . '"></td></tr>';
 
+            echo '<tr><th><label for="lf_submission_date">Dagur á skjalinum (umsókn)</label></th><td><input id="lf_submission_date" name="submission_date" type="text" class="regular-text" value="' . $submission_date . '" placeholder="YYYY-MM-DD"><p class="description">Sama dagur sum verður vístur undir «Dagur» á PDF. Vanligt format er <code>YYYY-MM-DD</code> (eisini brúkt í PDF-fílunavninum).</p></td></tr>';
+
+            echo '</tbody></table>';
+
+            echo '<h2>Góðkenning (á PDF)</h2>';
+            echo '<p class="description">Her kann tú rætta navn og dagsetningar, sum koma við á PDF undir «Góðkenning». Strik tey, um tey ikki skulu koma við.</p>';
+            echo '<table class="form-table"><tbody>';
+            echo '<tr><th><label for="lf_approved_by">Góðkent av (felag), navn</label></th><td><input id="lf_approved_by" name="approved_by" type="text" class="regular-text" value="' . $approved_by_val . '"></td></tr>';
+            echo '<tr><th><label for="lf_club_approved_date">Góðkent av (felag), dagur</label></th><td><input id="lf_club_approved_date" name="club_approved_date" type="text" class="regular-text" value="' . $club_approved_date_val . '" placeholder="YYYY-MM-DD"></td></tr>';
+            echo '<tr><th><label for="lf_guardian_approved_by">Góðkent av verja, navn</label></th><td><input id="lf_guardian_approved_by" name="guardian_approved_by" type="text" class="regular-text" value="' . $guardian_approved_by_val . '"' . (!empty($data['is_minor']) ? '' : ' disabled') . '></td></tr>';
+            echo '<tr><th><label for="lf_guardian_approved_date">Góðkent av verja, dagur</label></th><td><input id="lf_guardian_approved_date" name="guardian_approved_date" type="text" class="regular-text" value="' . $guardian_approved_date_val . '" placeholder="YYYY-MM-DD"' . (!empty($data['is_minor']) ? '' : ' disabled') . '></td></tr>';
+            echo '<tr><th><label for="lf_fss_approved_by">Góðkent av FSS, navn</label></th><td><input id="lf_fss_approved_by" name="fss_approved_by" type="text" class="regular-text" value="' . $fss_approved_by_val . '"></td></tr>';
+            echo '<tr><th><label for="lf_fss_approved_date">Góðkent av FSS, dagur</label></th><td><input id="lf_fss_approved_date" name="fss_approved_date" type="text" class="regular-text" value="' . $fss_approved_date_val . '" placeholder="YYYY-MM-DD"></td></tr>';
             echo '</tbody></table>';
 
             echo '<p><button type="submit" name="lf_admin_save" value="1" class="button button-primary">Goym broytingar</button></p>';
 
             echo '<hr />';
             echo '<h2>Endurgera PDF</h2>';
-            echo '<p>Strikar gomlu PDF og ger eina nýggja við nýverandi upplýsingum.</p>';
+            echo '<p>Strikar gomlu PDF og ger eina nýggja við goymdum upplýsingum (ókmt dags- og góðkenningarfeltini omanfyri).</p>';
             echo '<p><button type="submit" name="lf_admin_regenerate_pdf" value="1" class="button" onclick="return confirm(\'Ert tú viss(ur)? Gomlu PDF-fílan verður strikað og ein nýggj gjørd.\');">Endurgera PDF</button></p>';
 
             echo '<hr />';
@@ -335,6 +370,16 @@ function lf_render_admin_page() {
                 if(closeBtn && box && openBtn){
                     closeBtn.addEventListener("click", function(){ box.style.display = "none"; openBtn.style.display = "inline-block"; });
                 }
+                var minorChk = document.querySelector("input[name=\"is_minor\"]");
+                var gApprBy = document.getElementById("lf_guardian_approved_by");
+                var gApprDt = document.getElementById("lf_guardian_approved_date");
+                function syncGuardianApprovalFields(){
+                    var on = minorChk && minorChk.checked;
+                    if(gApprBy) gApprBy.disabled = !on;
+                    if(gApprDt) gApprDt.disabled = !on;
+                }
+                if(minorChk) minorChk.addEventListener("change", syncGuardianApprovalFields);
+                syncGuardianApprovalFields();
             })();
             </script>';
 
