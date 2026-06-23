@@ -39,11 +39,11 @@ function lf_get_pdf_logo_sources() {
 }
 
 /**
- * Ger eina PDF-fílu við upplýsingum úr lyftiloyvisformin og returnerar stígin.
+ * Ger eina PDF-fílu við upplýsingum úr kappingarloyvisformin og returnerar stígin.
  * Krevur, at Dompdf er tøkt (t.d. via dompdf/autoload.inc.php í sama faldara).
  * Returnerar fullan filstíg ella null, um onki eydnast.
  */
-function lf_generate_pdf($data)
+function lf_generate_pdf($data, $is_test = false)
 {
     // Royn at lata Dompdf inn, um tað ikki longu er tøkt
     if (!class_exists('Dompdf\\Dompdf')) {
@@ -113,7 +113,8 @@ function lf_generate_pdf($data)
     $html .= '<td>' . (!empty($logo2) ? '<img src="' . htmlspecialchars($logo2, ENT_QUOTES, "UTF-8") . '" alt="">' : '') . '</td>';
     $html .= '<td>' . (!empty($logo3) ? '<img src="' . htmlspecialchars($logo3, ENT_QUOTES, "UTF-8") . '" alt="">' : '') . '</td>';
     $html .= '</tr></table>';
-    $html .= '<h1>Lyftiloyvisváttan</h1>';
+    $test_suffix = $is_test ? ' <span style="color:red;">- Test</span>' : '';
+    $html .= '<h1>Kappingarloyviváttan' . $test_suffix . '</h1>';
     $html .= '</div>';
     $html .= '<div class="section">';
     $html .= '<table>';
@@ -140,12 +141,11 @@ function lf_generate_pdf($data)
     }
 
     $html .= '<div class="section">';
-    $html .= '<p style="font-size:11px; line-height:1.3; margin:0 0 5px 0;">Lyftiloyvið er galdandi fram til eina av hesum:</p>';
+    $html .= '<p style="font-size:11px; line-height:1.3; margin:0 0 5px 0;">Kappingarloyvið er galdandi fram til eina av hesum:</p>';
     $html .= '<ul class="pdf-validity-list" style="font-size:11px; line-height:1.35;">';
-    $html .= '<li>Íðkarin sendir skrivliga umbøn um at strika lyftiloyvið</li>';
-    $html .= '<li>Felagið sendir skrivliga umbøn um at strika lyftiloyvið</li>';
+    $html .= '<li>Íðkarin ella felagið ið íðkarin umboða, sendir eina skrivliga umbøn um at strika kappingarloyvið</li>';
     $html .= '<li>Íðkarin verður dømdur sekur í einari doping roynd</li>';
-    $html .= '<li>Íðkarin skiftur felag, og far tískil eitt nýtt lyftiloyvið</li>';
+    $html .= '<li>Íðkarin skiftur felag, og far tískil eitt nýtt kappingarloyvið</li>';
     $html .= '</ul>';
     $html .= '</div>';
 
@@ -163,7 +163,7 @@ function lf_generate_pdf($data)
         'Eg játti at endurrinda FSS allar útreiðslur frá seinastu 12 mánaðunum undan brotinum, um eg verð funnin sekur í broti á anti-doping reglunar.',
         'Eg játti at fylgja galdandi anti-doping reglum hjá ÍSF og teimum viðkomandi altjóða sambondunum, sum FSS er limur í.',
         'Eg játti, at FSS kann goyma eitt eintak av kappingarloyvinum.',
-        'Eg játti, at eg havi lokið skeiðið „Antidoping 1 – for idrætsudøvere", áðrenn eg umboði Føroyar og Merkið í altjóða kapping. Verð eg biðin um at skráseta whereabouts, játti eg eisini at taka skeiðið „Whereabouts – en guide for atleter".',
+        'Eg játti, at eg havi lokið skeiðið „Antidoping 1 – for idrætsudøvere", áðrenn eg umboði Føroyar og Merkið í altjóða kapping. Verði eg biðin um at skráseta whereabouts, játti eg eisini at taka skeiðið „Whereabouts – en guide for atleter".',
     ];
     foreach ($consent_labels as $label) {
         $html .= '<tr><td>&#x2611; ' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</td><td style="white-space:nowrap;color:#555;">' . htmlspecialchars($consent_ts_display, ENT_QUOTES, 'UTF-8') . '</td></tr>';
@@ -220,7 +220,7 @@ function lf_generate_pdf($data)
     return $filepath;
 }
 
-function lf_admin_build_subject($data, $prefix = 'Lyftiloyvi') {
+function lf_admin_build_subject($data, $prefix = 'Kappingarloyvi') {
     $name = $data['name'] ?? '';
     $club = $data['club'] ?? '';
 
@@ -241,14 +241,14 @@ function lf_admin_resend_pdf_to_recipients($data, $recipients, $explanation) {
         $attachments[] = $pdf_path;
     }
 
-    $subject = lf_admin_build_subject($data, 'Lyftiloyvi (sendt aftur)');
+    $subject = lf_admin_build_subject($data, 'Kappingarloyvi (sendt aftur)');
 
     $name      = $data['name'] ?? '';
     $club      = $data['club'] ?? '';
     $birthdate = $data['birthdate'] ?? '';
     $email     = $data['email'] ?? '';
 
-    $body  = "Ein uppdaterað útgáva av lyftiloyvinum er send aftur.\n\n";
+    $body  = "Ein uppdaterað útgáva av kappingarloyvinum er send aftur.\n\n";
     if ($explanation !== '') {
         $body .= "Forklaring frá admin:\n" . $explanation . "\n\n";
     }

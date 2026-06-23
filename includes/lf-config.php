@@ -41,7 +41,7 @@ function lf_get_logo_urls_for_pdf() {
 function lf_get_doping_text() {
     return 'Sum limur í einum felag undir Føroya Styrkisamband (FSS) vátti eg, at eg havi yvirhildið og frameftir fari at yvirhalda galdandi anti-doping reglur hjá ÍSF og teimum viðkomandi altjóða sambondunum, sum FSS er limur í.<br><br>'
         . 'Eg játti at lata meg kanna fyri doping, bæði í og uttanfyri kapping. Noktan at lata urin- ella blóðroynd verður roknað sum brot á anti-doping reglunar.<br><br>'
-        . 'Verð eg funnin sekur í broti á anti-doping reglunar, játti eg at endurrinda FSS allar útreiðslur, sum sambandið hevur havt av mær seinastu 12 mánaðarnar undan brotinum, herundir útreiðslur til ferðing, venjingarlegur, útgerð, stuðul og annað. Somuledis verða føroysk met, sum eg havi sett eftir undirskrift av hesum skjali, strikað.<br><br>'
+        . 'Verði eg funnin sekur í broti á anti-doping reglunar, játti eg at endurrinda FSS allar útreiðslur, sum sambandið hevur havt av mær seinastu 12 mánaðarnar undan brotinum, herundir útreiðslur til ferðing, venjingarlegur, útgerð, stuðul og annað. Somuledis verða føroysk met, sum eg havi sett eftir undirskrift av hesum skjali, strikað.<br><br>'
         . 'Ósemjur millum meg og FSS um tulking alla fremjan av hesum skjali, herundir spurningar um endurgjald og aðar skyldur sambært skjalinum, kunnu leggjast fyri gerðarætt sambært teimum reglum, sum tá eru galdandi. Hvør partur útnevnir ein gerðarættarlim innan 14 dagar eftir fráboðan frá hinum partinum. Gerðarættarlimirnir velja síðani ein óheftan uppmann. Hvør partur rindar útreiðslurnar til sín gerðarættarlim, meðan FSS rindar samsýning og møguligar útreiðslur hjá uppmanninum og í samband við gerðarættarviðgerðina.';
 }
 

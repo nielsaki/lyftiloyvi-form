@@ -68,7 +68,7 @@ function trailingslashit($str) {
 function wp_die($html, $title = '', $args = []) {
     global $_LF_DEBUG, $lf_css;
     echo '<!DOCTYPE html><html lang="fo"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
-    echo '<title>' . esc_html($title ?: 'Lyftiloyvi') . ' — Test</title>';
+    echo '<title>' . esc_html($title ?: 'Kappingarloyvi') . ' — Test</title>';
     echo '<style>' . $lf_css . '</style></head><body>';
     echo '<div class="test-banner">&#x1F6A7;&nbsp;<strong>TESTUMHVØRVI</strong>&nbsp;&#x1F6A7;&nbsp;Eingin teldupostur er sendur &middot; Lokalt JSON-DB</div>';
     echo '<div style="max-width:700px;margin:2rem auto;padding:1.5rem;background:#fff;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.08);font-family:system-ui,-apple-system,sans-serif;">';
@@ -460,7 +460,7 @@ function lf_render_form_test(): string
             $consent_5      = isset($_POST['lf_consent_5']) ? '1' : '';
 
             if (!empty($honeypot)) {
-                $output .= '<div class="lf-success">Takk! Lyftiloyvið er móttikið.</div>';
+                $output .= '<div class="lf-success">Takk! Kappingarloyvið er móttikið.</div>';
                 return $output;
             }
 
@@ -527,7 +527,7 @@ function lf_render_form_test(): string
             } else {
                 $subject_parts  = array_filter([$name, $club ? "($club)" : '']);
                 $subject_suffix = trim(implode(' ', $subject_parts));
-                $subject        = $subject_suffix ? 'Lyftiloyvi: ' . $subject_suffix : 'Lyftiloyvi: nýtt skjal';
+                $subject        = $subject_suffix ? 'Kappingarloyvi: ' . $subject_suffix : 'Kappingarloyvi: nýtt skjal';
 
                 $submission_data = [
                     'name' => $name, 'birthdate' => $birthdate, 'address' => $address,
@@ -555,10 +555,10 @@ function lf_render_form_test(): string
                 $fss_approval_link = add_query_arg('lf_fss_approve', $fss_token, get_site_url());
 
                 $chair_recipient = $club_chair_emails[$club] ?? lf_get_fss_email();
-                $chair_body  = "Umsókn um lyftiloyvi - bíðar eftir góðkenning.\n\nNavn: {$name}\nFelag: {$club}\nFøðingardagur: {$birthdate}\nTeldupostur: {$email}\n\nGóðkenn her:\n{$approval_link}\n";
+                $chair_body  = "Umsókn um kappingarloyvi - bíðar eftir góðkenning.\n\nNavn: {$name}\nFelag: {$club}\nFøðingardagur: {$birthdate}\nTeldupostur: {$email}\n\nGóðkenn her:\n{$approval_link}\n";
                 wp_mail($chair_recipient, 'Góðkenning krevst: ' . $subject, $chair_body);
 
-                $fss_body = "Umsókn um lyftiloyvi - krevur FSS góðkenning.\n\nNavn: {$name}\nFelag: {$club}\n\nGóðkenn her:\n{$fss_approval_link}\n";
+                $fss_body = "Umsókn um kappingarloyvi - krevur FSS góðkenning.\n\nNavn: {$name}\nFelag: {$club}\n\nGóðkenn her:\n{$fss_approval_link}\n";
                 wp_mail(lf_get_fss_email(), 'Góðkenning krevst (FSS): ' . $subject, $fss_body);
 
                 if ($is_minor && !empty($guardian_email) && !empty($guardian_token)) {
@@ -577,12 +577,12 @@ function lf_render_form_test(): string
     // ── Form HTML ──
 
     $output .= '<form method="post" class="lf-form">';
-    $output .= '<h2 class="lf-form-title">Váttan í samband við lyftiloyvi</h2>';
+    $output .= '<h2 class="lf-form-title">Váttan í samband við kappingarloyvi</h2>';
     $output .= wp_nonce_field('lf_submit', 'lf_nonce', true, false);
     $output .= '<input type="hidden" name="lf_form_submitted" value="1">';
 
-    $output .= '<p><small>Við at fylla lyftiloyvi út, váttar tú at tú heldur galdandi reglur hjá ÍSF og teimum altjóða sambondunum, sum Føroya Styrkisamband virkar undir, umframt kanningar fyri doping sambært hesum reglum.</small></p>';
-    $output .= '<p><small>Um tú skiftur felag, er neyðugt at fylla nýtt lyftiloyvið út.</small></p>';
+    $output .= '<p><small>Við at fylla kappingarloyvi út, váttar tú at tú heldur galdandi reglur hjá ÍSF og teimum altjóða sambondunum, sum Føroya Styrkisamband virkar undir, umframt kanningar fyri doping sambært hesum reglum.</small></p>';
+    $output .= '<p><small>Um tú skiftur felag, er neyðugt at fylla nýtt kappingarloyvið út.</small></p>';
 
     $output .= '<div class="lf-row">
         <div class="lf-col"><p><label>Fulla navn á íðkara *<br><input type="text" name="lf_name" required value="' . esc_attr($name) . '" placeholder="for-, millum- og eftirnavn"></label></p></div>
@@ -617,14 +617,14 @@ function lf_render_form_test(): string
 
     $output .= '<p class="lf-info-block"><small>' . lf_get_doping_text() . '</small></p>';
     $output .= '<p><label class="lf-consent-label"><input type="checkbox" name="lf_consent_1" value="1"' . ($consent_1 === '1' ? ' checked="checked"' : '') . ' required> Eg játti at lata meg kanna fyri doping.</label></p>';
-    $output .= '<p><label class="lf-consent-label"><input type="checkbox" name="lf_consent_2" value="1"' . ($consent_2 === '1' ? ' checked="checked"' : '') . ' required> Eg játti at endurrinda FSS allar útreiðslur frá seinastu 12 mánaðunum undan brotinum, um eg verð funnin sekur í broti á anti-doping reglunar.</label></p>';
+    $output .= '<p><label class="lf-consent-label"><input type="checkbox" name="lf_consent_2" value="1"' . ($consent_2 === '1' ? ' checked="checked"' : '') . ' required> Eg játti at endurrinda FSS allar útreiðslur frá seinastu 12 mánaðunum undan brotinum, um eg verði funnin sekur í broti á anti-doping reglunar.</label></p>';
     $output .= '<p><label class="lf-consent-label"><input type="checkbox" name="lf_consent_3" value="1"' . ($consent_3 === '1' ? ' checked="checked"' : '') . ' required> Eg játti at fylgja galdandi anti-doping reglum hjá ÍSF og teimum viðkomandi altjóða sambondunum, sum FSS er limur í.</label></p>';
     $output .= '<p><label class="lf-consent-label"><input type="checkbox" name="lf_consent_4" value="1"' . ($consent_4 === '1' ? ' checked="checked"' : '') . ' required> Eg játti, at FSS kann goyma eitt eintak av kappingarloyvinum.</label></p>';
     $output .= '<p class="lf-info-block">' . lf_get_add_block_html() . '</p>';
-    $output .= '<p><label class="lf-consent-label"><input type="checkbox" name="lf_consent_5" value="1"' . ($consent_5 === '1' ? ' checked="checked"' : '') . ' required> Eg játti, at eg havi lokið skeiðið &bdquo;Antidoping 1 &ndash; for idrætsudøvere&ldquo;, áðrenn eg umboði Føroyar og Merkið í altjóða kapping. Verð eg biðin um at skráseta whereabouts, játti eg eisini at taka skeiðið &bdquo;Whereabouts &ndash; en guide for atleter&ldquo;.</label></p>';
+    $output .= '<p><label class="lf-consent-label"><input type="checkbox" name="lf_consent_5" value="1"' . ($consent_5 === '1' ? ' checked="checked"' : '') . ' required> Eg játti, at eg havi lokið skeiðið &bdquo;Antidoping 1 &ndash; for idrætsudøvere&ldquo;, áðrenn eg umboði Føroyar og Merkið í altjóða kapping. Verði eg biðin um at skráseta whereabouts, játti eg eisini at taka skeiðið &bdquo;Whereabouts &ndash; en guide for atleter&ldquo;.</label></p>';
 
     $output .= '<p class="lf-hp" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;"><label>Ikki fyll hetta út<br><input type="text" name="lf_hp" tabindex="-1" autocomplete="off"></label></p>';
-    $output .= '<p><button type="submit">Lat lyftiloyvi inn</button></p>';
+    $output .= '<p><button type="submit">Lat kappingarloyvi inn</button></p>';
     $output .= '</form>';
 
     $output .= '<script>
@@ -693,6 +693,41 @@ if (isset($_GET['lf_clear_db'])) {
     exit;
 }
 
+// Generate test PDF
+if (isset($_GET['lf_test_pdf'])) {
+    $test_data = [
+        'name'                   => 'Jóannes Testsson',
+        'birthdate'              => '15.03.1998',
+        'address'                => 'Kongabrúgvin 12',
+        'city'                   => 'Tórshavn',
+        'phone'                  => '123456',
+        'email'                  => 'test@test.fo',
+        'club'                   => 'Testfelag ÍF',
+        'date'                   => date('d.m.Y'),
+        'is_minor'               => false,
+        'guardian_name'          => '',
+        'guardian_email'         => '',
+        'guardian_phone'         => '',
+        'approved_by'            => 'Petur Formingur',
+        'guardian_approved_by'   => '',
+        'fss_approved_by'        => 'FSS Admin',
+        'club_approved_date'     => date('d.m.Y'),
+        'guardian_approved_date' => '',
+        'fss_approved_date'      => date('d.m.Y'),
+        'consent_timestamp'      => date('Y-m-d H:i:s'),
+    ];
+    $pdf_path = lf_generate_pdf($test_data, true);
+    if ($pdf_path && file_exists($pdf_path)) {
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="test-kappingarloyvi.pdf"');
+        header('Content-Length: ' . filesize($pdf_path));
+        readfile($pdf_path);
+        exit;
+    }
+    echo '<p style="color:red;">Tað eydnaðist ikki at gera PDF. Kanna at Dompdf er sett upp.</p>';
+    exit;
+}
+
 // Approval routes — call the real plugin handlers
 if (isset($_GET['lf_approve'])) {
     lf_handle_approval();
@@ -718,7 +753,7 @@ $debug_html    = lf_render_debug_panel($_LF_DEBUG);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Lyftiloyvi Form — Lokalt Test</title>
+    <title>Kappingarloyvi Form — Lokalt Test</title>
     <style><?= $lf_css ?></style>
 </head>
 <body>
@@ -727,6 +762,8 @@ $debug_html    = lf_render_debug_panel($_LF_DEBUG);
     &#x1F6A7;&nbsp; <strong>TESTUMHVØRVI</strong> &nbsp;&#x1F6A7;&nbsp;
     Eingin teldupostur er sendur &middot; JSON-fíla brúkt sum DB &middot;
     Góðkenningarleinkjur virka!
+    &nbsp;&nbsp;|&nbsp;&nbsp;
+    <a href="?lf_test_pdf=1" target="_blank" style="color:#fff;font-weight:bold;background:rgba(0,0,0,0.25);padding:3px 10px;border-radius:4px;text-decoration:none;">&#x1F4C4; Ger test PDF</a>
 </div>
 
 <?= $form_html ?>

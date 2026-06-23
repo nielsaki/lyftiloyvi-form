@@ -63,7 +63,7 @@ function lf_render_form()
 
             // Honeypot
             if (!empty($honeypot)) {
-                $output .= '<div class="lf-success">Takk! Lyftiloyvið er móttikið.</div>';
+                $output .= '<div class="lf-success">Takk! Kappingarloyvið er móttikið.</div>';
                 return $output; // 🟢 Stopper spam-submit
             } else {
 
@@ -158,9 +158,9 @@ function lf_render_form()
                     }
                     $subject_suffix = trim(implode(' ', $subject_parts));
                     if ($subject_suffix === '') {
-                        $subject = 'Lyftiloyvi: nýtt skjal';
+                        $subject = 'Kappingarloyvi: nýtt skjal';
                     } else {
-                        $subject = 'Lyftiloyvi: ' . $subject_suffix;
+                        $subject = 'Kappingarloyvi: ' . $subject_suffix;
                     }
 
                     // Save submission data for approval step
@@ -235,7 +235,7 @@ function lf_render_form()
 
                     $chair_subject = 'Góðkenning krevst: ' . $subject;
 
-                    $chair_body  = "Ein nýggj umsókn um lyftiloyvi er móttikin og bíðar eftir góðkenning frá nevndarlimi ella øðrum parti við heimhildum.\n\n";
+                    $chair_body  = "Ein nýggj umsókn um kappingarloyvi er móttikin og bíðar eftir góðkenning frá nevndarlimi ella øðrum parti við heimhildum.\n\n";
                     $chair_body .= "Navn á íðkaranum: {$name}\n";
                     $chair_body .= "Felag: {$club}\n";
                     $chair_body .= "Føðingardagur (dd.mm.áááá): {$birthdate}\n";
@@ -256,7 +256,7 @@ function lf_render_form()
                     $sent = wp_mail($chair_recipient, $chair_subject, $chair_body, $headers, $attachments);
 
                     $fss_subject = 'Góðkenning krevst (FSS): ' . $subject;
-                    $fss_body  = "Ein nýggj umsókn um lyftiloyvi er móttikin og krevur góðkenning frá FSS.\n\n";
+                    $fss_body  = "Ein nýggj umsókn um kappingarloyvi er móttikin og krevur góðkenning frá FSS.\n\n";
                     $fss_body .= "Fulla navn á íðkara: {$name}\n";
                     $fss_body .= "Felag: {$club}\n";
                     $fss_body .= "Føðingardagur: {$birthdate}\n";
@@ -270,7 +270,7 @@ function lf_render_form()
 
                     if (!$fss_sent) {
                         error_log(sprintf(
-                            'Lyftiloyvi: FSS teldupostur miseydnaðist. Móttakari: %s, Evni: %s',
+                            'Kappingarloyvi: FSS teldupostur miseydnaðist. Móttakari: %s, Evni: %s',
                             $fss_recipient,
                             $fss_subject
                         ));
@@ -287,7 +287,7 @@ function lf_render_form()
 
                             $guardian_approve_subject = 'Góðkenning krevst (verji): ' . $subject;
                             $guardian_approve_body  = "Tú ert skrásettur sum verji hjá {$name}.\n\n";
-                            $guardian_approve_body .= "Ein umsókn um lyftiloyvi er send inn og krevur tína góðkenning sum verji.\n\n";
+                            $guardian_approve_body .= "Ein umsókn um kappingarloyvi er send inn og krevur tína góðkenning sum verji.\n\n";
                             $guardian_approve_body .= "Fyri at lesa váttanina og góðkenna hana, klikk á hesa leinkju:\n";
                             $guardian_approve_body .= $guardian_approval_link . "\n\n";
                             $guardian_approve_body .= "Tá tú hevur góðkent, verður umsóknin saman við góðkenningini send til Føroya Styrkisamband.\n";
@@ -312,14 +312,14 @@ function lf_render_form()
 
     // Form start
     $output .= '<form method="post" class="lf-form">';
-    $output .= '<h2 class="lf-form-title">Váttan í samband við lyftiloyvi</h2>';
+    $output .= '<h2 class="lf-form-title">Váttan í samband við kappingarloyvi</h2>';
 
     $output .= wp_nonce_field('lf_submit', 'lf_nonce', true, false);
     $output .= '<input type="hidden" name="lf_form_submitted" value="1">';
 
     // Maybe you show the PDF text above in the page – selve formularen her:
-    $output .= '<p><small>Við at fylla lyftiloyvi út, váttar tú at tú heldur galdandi reglur hjá ÍSF og teimum altjóða sambondunum, sum Føroya Styrkisamband virkar undir, umframt kanningar fyri doping sambært hesum reglum.</small></p>';
-    $output .= '<p><small>Um tú skiftur felag, er neyðugt at fylla nýtt lyftiloyvið út.</small></p>';
+    $output .= '<p><small>Við at fylla kappingarloyvi út, váttar tú at tú heldur galdandi reglur hjá ÍSF og teimum altjóða sambondunum, sum Føroya Styrkisamband virkar undir, umframt kanningar fyri doping sambært hesum reglum.</small></p>';
+    $output .= '<p><small>Um tú skiftur felag, er neyðugt at fylla nýtt kappingarloyvið út.</small></p>';
 
     $output .= '<div class="lf-row">
         <div class="lf-col">
@@ -450,7 +450,7 @@ function lf_render_form()
     $output .= '<p>
         <label class="lf-consent-label">
             <input type="checkbox" name="lf_consent_5" value="1"' . ($consent_5 === '1' ? ' checked="checked"' : '') . ' required>
-            Eg játti, at eg havi lokið skeiðið &bdquo;Antidoping 1 &ndash; for idrætsudøvere&ldquo;, áðrenn eg umboði Føroyar og Merkið í altjóða kapping. Verð eg biðin um at skráseta whereabouts, játti eg eisini at taka skeiðið &bdquo;Whereabouts &ndash; en guide for atleter&ldquo;.
+            Eg játti, at eg havi lokið skeiðið &bdquo;Antidoping 1 &ndash; for idrætsudøvere&ldquo;, áðrenn eg umboði Føroyar og Merkið í altjóða kapping. Verði eg biðin um at skráseta whereabouts, játti eg eisini at taka skeiðið &bdquo;Whereabouts &ndash; en guide for atleter&ldquo;.
         </label>
     </p>';
 
@@ -462,7 +462,7 @@ function lf_render_form()
     </p>';
 
     $output .= '<p>
-        <button type="submit">Lat lyftiloyvi inn</button>
+        <button type="submit">Lat kappingarloyvi inn</button>
     </p>';
 
     $output .= '</form>';
