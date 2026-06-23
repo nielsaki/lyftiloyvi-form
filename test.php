@@ -576,7 +576,7 @@ function lf_render_form_test(): string
     // ── Form HTML ──
 
     $output .= '<form method="post" class="lf-form">';
-    $output .= '<h2 class="lf-form-title">Váttan í samband við lyftiloyvi</h2>';
+    $output .= '<h2 class="lf-form-title">Váttan í samband við lyftiloyvi_TEST</h2>';
     $output .= wp_nonce_field('lf_submit', 'lf_nonce', true, false);
     $output .= '<input type="hidden" name="lf_form_submitted" value="1">';
 
