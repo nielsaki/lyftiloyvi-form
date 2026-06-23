@@ -127,6 +127,10 @@ function lf_enqueue_styles()
         width: auto;
         margin-right: 0.4rem;
     }
+    .lf-form .lf-consent-label {
+        font-weight: 400;
+        font-size: 13px;
+    }
     .lf-form .lf-hp {
         display: none;
     }

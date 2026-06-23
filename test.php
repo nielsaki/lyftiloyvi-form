@@ -227,6 +227,7 @@ body {
 }
 .lf-form button[type="submit"]:hover { background: #006ba1; }
 .lf-form input[type="checkbox"], .lf-form input[type="radio"] { width: auto; margin-right: 0.4rem; }
+.lf-form .lf-consent-label { font-weight: 400; font-size: 13px; }
 .lf-form .lf-hp { display: none; }
 .lf-success { padding: 0.6em 0.9em; margin: 1rem auto; border-radius: 4px; border: 1px solid #4caf50; background: #e8f5e9; color: #256029; max-width: 900px; }
 .lf-error   { padding: 0.6em 0.9em; margin: 1rem auto; border-radius: 4px; border: 1px solid #f44336; background: #ffebee; color: #b71c1c; max-width: 900px; }
@@ -432,7 +433,7 @@ function lf_render_form_test(): string
     $club_chair_emails = lf_get_club_chair_emails();
 
     $name = $email = $birthdate = $address = $city = $phone = $club = $date = '';
-    $honeypot = $consent = $guardian_name = $guardian_email = $guardian_phone = '';
+    $honeypot = $consent_1 = $consent_2 = $consent_3 = $consent_4 = $consent_5 = $guardian_name = $guardian_email = $guardian_phone = '';
     $age = null;
     $is_minor = false;
 
@@ -452,7 +453,11 @@ function lf_render_form_test(): string
             $guardian_phone = sanitize_text_field($_POST['lf_guardian_phone'] ?? '');
             $club           = sanitize_text_field($_POST['lf_club'] ?? '');
             $date           = date('Y-m-d');
-            $consent        = isset($_POST['lf_consent']) ? '1' : '';
+            $consent_1      = isset($_POST['lf_consent_1']) ? '1' : '';
+            $consent_2      = isset($_POST['lf_consent_2']) ? '1' : '';
+            $consent_3      = isset($_POST['lf_consent_3']) ? '1' : '';
+            $consent_4      = isset($_POST['lf_consent_4']) ? '1' : '';
+            $consent_5      = isset($_POST['lf_consent_5']) ? '1' : '';
 
             if (!empty($honeypot)) {
                 $output .= '<div class="lf-success">Takk! Lyftiloyvið er móttikið.</div>';
@@ -513,7 +518,7 @@ function lf_render_form_test(): string
             } elseif (!in_array($club, $clubs, true)) {
                 $errors[] = 'Valda felagið er ikki eitt gyldigt val.';
             }
-            if (empty($consent)) $errors[] = 'Vinaliga vátta, at tú góðtekur lyftiloyvisváttanina omanfyri.';
+            if (empty($consent_1) || empty($consent_2) || empty($consent_3) || empty($consent_4) || empty($consent_5)) $errors[] = 'Vinaliga vátta allar váttanirnar omanfyri.';
 
             if (!empty($errors)) {
                 $output .= '<div class="lf-error"><ul>';
@@ -562,7 +567,7 @@ function lf_render_form_test(): string
 
                 $output .= '<div class="lf-success">Takk! Umsóknin er móttikin. Trýst á leinkjurnar í tabellini niðanfyri fyri at testa góðkenningarnar.</div>';
 
-                $name = $email = $birthdate = $address = $city = $phone = $club = $date = $consent = '';
+                $name = $email = $birthdate = $address = $city = $phone = $club = $date = $consent_1 = $consent_2 = $consent_3 = $consent_4 = $consent_5 = '';
                 $guardian_name = $guardian_email = $guardian_phone = '';
             }
         }
@@ -610,8 +615,12 @@ function lf_render_form_test(): string
     $output .= '</select></label></p></div></div>';
 
     $output .= '<p class="lf-info-block"><small>' . lf_get_doping_text() . '</small></p>';
-    $output .= '<p><label><input type="checkbox" name="lf_consent" value="1"' . ($consent === '1' ? ' checked="checked"' : '') . ' required> Eg havi lisið og góðtikið lyftiloyvisváttanina, og góðtaki at mínar persónsupplýsingar verða viðgjørdar í hesum sambandi.</label></p>';
+    $output .= '<p><label class="lf-consent-label"><input type="checkbox" name="lf_consent_1" value="1"' . ($consent_1 === '1' ? ' checked="checked"' : '') . ' required> Eg játti at lata meg verða kannaðan til doping-roynd</label></p>';
+    $output .= '<p><label class="lf-consent-label"><input type="checkbox" name="lf_consent_2" value="1"' . ($consent_2 === '1' ? ' checked="checked"' : '') . ' required> Eg játti at rinda allar útreiðslur FSS hevur havt av mær síðstu 12 mánaðirnar aftur, um eg verið testaður positivt í einari doping-roynd</label></p>';
+    $output .= '<p><label class="lf-consent-label"><input type="checkbox" name="lf_consent_3" value="1"' . ($consent_3 === '1' ? ' checked="checked"' : '') . ' required> Eg játti at fylgja anti-doping reglugerð hjá viðkomandi altjóða sambondum</label></p>';
+    $output .= '<p><label class="lf-consent-label"><input type="checkbox" name="lf_consent_4" value="1"' . ($consent_4 === '1' ? ' checked="checked"' : '') . ' required> Eg játti at Føroya Styrkisamband kann goyma eitt eintak av kappingarloyvinum</label></p>';
     $output .= '<p class="lf-info-block">' . lf_get_add_block_html() . '</p>';
+    $output .= '<p><label class="lf-consent-label"><input type="checkbox" name="lf_consent_5" value="1"' . ($consent_5 === '1' ? ' checked="checked"' : '') . ' required> Eg játtið, at um eg skal umboða Føroyar og Merkið til eina kapping, so havi eg tikið anti-doping skeiðið, &ldquo;ANTIDOPING 1 &ndash; FOR IDRÆTSUDØVERE&rdquo;. Og verið eg biðin um at skráseta Whereabouts. So játti eg eisini at taka skeiðið &ldquo;WHEREABOUTS - EN GUIDE FOR ATLETER&rdquo;.</label></p>';
 
     $output .= '<p class="lf-hp" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;"><label>Ikki fyll hetta út<br><input type="text" name="lf_hp" tabindex="-1" autocomplete="off"></label></p>';
     $output .= '<p><button type="submit">Lat lyftiloyvi inn</button></p>';

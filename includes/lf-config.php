@@ -50,12 +50,10 @@ function lf_get_doping_text() {
  */
 function lf_get_add_block_html() {
     return '<small>
-        <strong>Anti Doping Danmark (ADD) skeið:</strong><br>
-        Um íðkarin er 18 ár ella eldri, so er neyðugt at fullfíggja ADD-skeiðið <em>"Antidoping 1 - for idrætsudøvere"</em>, sum Anti Doping Danmark hevur gjørt. Skeiðið kann gerast á hesi síðuni: <a href="https://uddannelse.antidoping.dk/" target="_blank" rel="noopener">https://uddannelse.antidoping.dk/</a><br><br>
-        ADD-skeiðið gongur út eftir tvey ár, tó er bert neyðugt at gera skeiðið einaferð.<br><br>
-        Er hetta ikki fullfíggja, verður lyftiloyvi ikki góðtikið av FSS, og viðkomandi hevur ikki loyvið at luttaka til kappingar.<br><br>
-        Er íðkarin undir 18 ár, er einki krav um at lúka skeiðið. Tó viðmæla vit altíð, at íðkarin og verjin hafa hetta skeiðið hóast alt.<br><br>
-        Um íðkarin skal við landsliðinum, so er krav, at hann/hon hevur eitt ikki-útgingið skeið.
+        <strong>Umboðan fyri Føroyar:</strong><br>
+        Um íðkarin skal umboða Føroyar ella Merkið, til eina kapping, so er krav at hava eitt virkið og fullfíggja <em>"Antidoping 1 - for idrætsudøvere"</em> skeið. Skeiðið kann gerast á hesi síðuni: <a href="https://uddannelse.antidoping.dk/" target="_blank" rel="noopener">https://uddannelse.antidoping.dk/</a>. Skal íðkarin eisini skráseta whereabouts, so er eisini krav at hava eitt virkið og fullfíggja "WHEREABOUTS - EN GUIDE FOR ATLETER" skeið.<br><br>
+        ADD-skeiðið gongur út eftir tvey ár.<br><br>
+        Er hetta ikki fullfíggja, sleppur íðkarin ikki at luttaka til kappingar umboðandi fyri Føroyar, ella undir Merkiðnum.<br><br>
     </small>';
 }
 
