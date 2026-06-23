@@ -1,0 +1,11 @@
+---
+
+deployment:
+
+  tasks:
+
+    - export DEPLOYPATH=/home/styrkisa/public_html/wp-content/plugins/lyftiloyvi-form-2/
+
+    - /bin/mkdir -p $DEPLOYPATH
+
+    - /bin/rsync -a --delete --exclude='.git' --exclude='.cpanel.yml' ./ $DEPLOYPATH
