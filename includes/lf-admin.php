@@ -336,6 +336,61 @@ function lf_render_admin_page() {
             }
             $bulk_notice_msg = sprintf('FSS-góðkenning er biðjað/send til lyftiloyvi hjá %d umsóknum.', $ok_f)
                 . ($fail_f > 0 ? ' ' . sprintf('%d miseydnaðust.', $fail_f) : '');
+        } elseif ($bulk_action === 'custom_email') {
+            $custom_subject = sanitize_text_field(wp_unslash($_POST['lf_custom_subject'] ?? ''));
+            $custom_body    = sanitize_textarea_field(wp_unslash($_POST['lf_custom_body'] ?? ''));
+            $send_to        = isset($_POST['lf_custom_send_to']) ? array_map('sanitize_text_field', (array) wp_unslash($_POST['lf_custom_send_to'])) : [];
+            $club_chair_emails = lf_get_club_chair_emails();
+            $ok_mail = 0; $fail_mail = 0;
+
+            foreach ($bulk_ids as $bid) {
+                $brow = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d LIMIT 1", $bid));
+                if (!$brow) { $fail_mail++; continue; }
+                $bdata = maybe_unserialize($brow->data);
+                if (!is_array($bdata)) $bdata = [];
+
+                // Regenerate PDF
+                if (!empty($brow->pdf_path) && is_string($brow->pdf_path) && file_exists($brow->pdf_path)) {
+                    @unlink($brow->pdf_path);
+                }
+                $new_pdf = function_exists('lf_generate_pdf') ? lf_generate_pdf($bdata) : null;
+                if ($new_pdf && file_exists($new_pdf)) {
+                    $wpdb->update($table_name, ['pdf_path' => $new_pdf], ['id' => $bid], ['%s'], ['%d']);
+                }
+                $attachments = (!empty($new_pdf) && file_exists($new_pdf)) ? [$new_pdf] : [];
+
+                // Build recipient list
+                $recipients = [];
+                if (in_array('fss', $send_to, true)) {
+                    $fss_e = function_exists('lf_get_fss_email') ? lf_get_fss_email() : '';
+                    if ($fss_e) $recipients[] = $fss_e;
+                }
+                if (in_array('club', $send_to, true)) {
+                    $club_e = $club_chair_emails[$bdata['club'] ?? ''] ?? '';
+                    if ($club_e) $recipients[] = $club_e;
+                }
+                if (in_array('athlete', $send_to, true) && !empty($bdata['email'])) {
+                    $recipients[] = $bdata['email'];
+                }
+                if (in_array('guardian', $send_to, true) && !empty($bdata['is_minor']) && !empty($bdata['guardian_email'])) {
+                    $recipients[] = $bdata['guardian_email'];
+                }
+                $recipients = array_values(array_unique(array_filter(array_map(static function ($x) {
+                    return strtolower(trim((string) $x));
+                }, $recipients))));
+
+                if (empty($recipients)) { $fail_mail++; continue; }
+
+                $sent_any = false;
+                foreach ($recipients as $to) {
+                    if (!is_email($to)) continue;
+                    if (wp_mail($to, $custom_subject, $custom_body, [], $attachments)) $sent_any = true;
+                }
+                if ($sent_any) $ok_mail++; else $fail_mail++;
+            }
+
+            $bulk_notice_msg = sprintf('%d umsóknir: teldupostur sendur.', $ok_mail)
+                . ($fail_mail > 0 ? ' ' . sprintf('%d miseydnaðust (kanna móttakarar / teldupost-skipan).', $fail_mail) : '');
         } else {
             $bulk_notice_msg = 'Ókend handling.';
         }
@@ -838,9 +893,28 @@ function lf_render_admin_page() {
     echo '<option value="resend_link_fss">Send góðkenningarleinkju til FSS</option>';
     echo '<option value="clear_club_approval">Strika «góðkent av felagi»</option>';
     echo '<option value="delete">Strika umsóknir</option>';
+    echo '<option value="custom_email">&#x2709; Send tilpassað teldupost…</option>';
     echo '</select> ';
-    echo '<button type="submit" name="lf_bulk_submit" value="1" class="button action">Ger</button>';
+    echo '<button type="submit" name="lf_bulk_submit" value="1" class="button action" id="lf-bulk-ger-btn">Ger</button>';
     echo '</div>';
+    echo '</div>';
+
+    // Compose panel – shown when custom_email is selected
+    echo '<div id="lf-custom-email-panel" style="display:none;margin:0 0 16px 0;padding:16px 18px;background:#fff;border:1px solid #ccd0d4;border-radius:6px;max-width:740px;">';
+    echo '<p style="margin:0 0 10px;font-weight:600;">&#x2709; Tilpassað teldupost — verður sent til valdu umsóknirnar við nýggjari PDF</p>';
+    echo '<p style="margin:0 0 8px;"><strong>Send til:</strong></p>';
+    echo '<label style="display:block;margin:4px 0;"><input type="checkbox" class="lf-ce-rcpt" name="lf_custom_send_to[]" value="club" checked> Felag (formans-teldupostur)</label>';
+    echo '<label style="display:block;margin:4px 0;"><input type="checkbox" class="lf-ce-rcpt" name="lf_custom_send_to[]" value="athlete" checked> Íðkari</label>';
+    echo '<label style="display:block;margin:4px 0;"><input type="checkbox" class="lf-ce-rcpt" name="lf_custom_send_to[]" value="guardian"> Verji (bert um undir 18 ár og verji er skrásettur)</label>';
+    echo '<label style="display:block;margin:4px 0 10px;"><input type="checkbox" class="lf-ce-rcpt" name="lf_custom_send_to[]" value="fss"> FSS</label>';
+    echo '<p style="margin:0 0 4px;"><label><strong>Evni</strong><br>';
+    echo '<input type="text" name="lf_custom_subject" id="lf-ce-subject" class="regular-text" style="width:100%;max-width:620px;" value="Kappingarloyvi – tíðindir" /></label></p>';
+    echo '<p style="margin:0 0 12px;"><label><strong>Tekst</strong><br>';
+    echo '<textarea name="lf_custom_body" id="lf-ce-body" rows="9" style="width:100%;max-width:620px;font-family:monospace;font-size:13px;"></textarea></label></p>';
+    echo '<p style="display:flex;gap:10px;flex-wrap:wrap;margin:0;">';
+    echo '<button type="submit" name="lf_bulk_submit" value="1" class="button button-primary" id="lf-ce-send-btn">Send nú</button>';
+    echo '<button type="button" class="button" id="lf-ce-cancel-btn">Annulla</button>';
+    echo '</p>';
     echo '</div>';
 
     echo '<table class="widefat fixed striped">';
@@ -964,11 +1038,38 @@ function lf_render_admin_page() {
     echo '<script>
     (function(){
         var bulkForm = document.querySelector(".lf-bulk-requests-form");
+        var actionSel = document.getElementById("lf-bulk-action");
+        var gerBtn    = document.getElementById("lf-bulk-ger-btn");
+        var composePanel = document.getElementById("lf-custom-email-panel");
+        var cancelBtn = document.getElementById("lf-ce-cancel-btn");
+
+        function toggleCompose() {
+            var isCustom = actionSel && actionSel.value === "custom_email";
+            if (composePanel) composePanel.style.display = isCustom ? "block" : "none";
+            if (gerBtn)       gerBtn.style.display       = isCustom ? "none"  : "";
+        }
+        if (actionSel) actionSel.addEventListener("change", toggleCompose);
+        if (cancelBtn) cancelBtn.addEventListener("click", function(){
+            if (actionSel) actionSel.value = "";
+            toggleCompose();
+        });
+
         if(bulkForm){
             bulkForm.addEventListener("submit", function(e){
-                var sel = document.getElementById("lf-bulk-action");
-                var action = sel ? sel.value : "";
+                var action = actionSel ? actionSel.value : "";
                 var boxes = bulkForm.querySelectorAll(".lf-bulk-row-cb:checked");
+
+                if(action === "custom_email"){
+                    var subj = document.getElementById("lf-ce-subject");
+                    var body = document.getElementById("lf-ce-body");
+                    var rcpts = bulkForm.querySelectorAll(".lf-ce-rcpt:checked");
+                    if(!subj || !subj.value.trim()){ e.preventDefault(); alert("Skriva eitt evni."); return; }
+                    if(!body || !body.value.trim()){ e.preventDefault(); alert("Skriva eitt tekst."); return; }
+                    if(!rcpts.length){ e.preventDefault(); alert("Vel minst einn mótakara."); return; }
+                    if(!boxes.length){ e.preventDefault(); alert("Vel minst eina umsókn."); return; }
+                    return;
+                }
+
                 if(!action || !boxes.length){
                     e.preventDefault();
                     alert("Vel handling og minst ein røð.");
