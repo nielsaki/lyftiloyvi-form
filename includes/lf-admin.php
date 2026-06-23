@@ -655,20 +655,21 @@ function lf_render_admin_page() {
         }
     }
 
-    // Handtera strikan av einstøkum umsóknum (einki nonce-check fyri at gera tað einfaldari)
+    // Handtera strikan av einstøkum umsóknum
     if (
         isset($_POST['lf_delete_request']) &&
-        isset($_POST['lf_delete_id'])
+        isset($_POST['lf_delete_id']) &&
+        isset($_POST['lf_delete_nonce']) &&
+        wp_verify_nonce(wp_unslash($_POST['lf_delete_nonce']), 'lf_delete_request')
     ) {
         $delete_id = intval($_POST['lf_delete_id']);
         if ($delete_id > 0) {
             $deleted = $wpdb->delete($table_name, ['id' => $delete_id], ['%d']);
-            if ($deleted) {
-                $message = 'Umsókn nr. ' . $delete_id . ' er strikað.';
-            } else {
-                $message = 'Eitt mistak hentist við at strika umsóknina.';
-            }
+            $msg = $deleted ? 'Umsókn nr. ' . $delete_id . ' er strikað.' : 'Eitt mistak hentist við at strika umsóknina.';
+            set_transient('lf_bulk_notice_' . get_current_user_id(), $msg, 60);
         }
+        wp_safe_redirect(admin_url('admin.php?page=lf-lyftiloyvi'));
+        exit;
     }
 
     // Royn at finna tabellina
@@ -815,8 +816,7 @@ function lf_render_admin_page() {
         return;
     }
 
-    echo '<form method="post" class="lf-bulk-requests-form" action="' . esc_url(admin_url('admin.php')) . '">';
-    echo '<input type="hidden" name="page" value="lf-lyftiloyvi" />';
+    echo '<form method="post" class="lf-bulk-requests-form" action="' . esc_url(admin_url('admin.php?page=lf-lyftiloyvi')) . '">';
     wp_nonce_field('lf_bulk_requests', 'lf_bulk_nonce');
     echo '<input type="hidden" name="lf_keep_status" value="' . esc_attr($status_filter) . '" />';
     echo '<input type="hidden" name="lf_keep_club" value="' . esc_attr($club_filter) . '" />';
@@ -955,10 +955,10 @@ function lf_render_admin_page() {
 
     echo '</form>';
 
-    echo '<form id="lf-single-delete-form" method="post" action="' . esc_url(admin_url('admin.php')) . '" style="display:none;">';
-    echo '<input type="hidden" name="page" value="lf-lyftiloyvi" />';
+    echo '<form id="lf-single-delete-form" method="post" action="' . esc_url(admin_url('admin.php?page=lf-lyftiloyvi')) . '" style="display:none;">';
     echo '<input type="hidden" name="lf_delete_request" value="1" />';
     echo '<input type="hidden" name="lf_delete_id" id="lf-single-delete-id" value="" />';
+    wp_nonce_field('lf_delete_request', 'lf_delete_nonce');
     echo '</form>';
 
     echo '<script>

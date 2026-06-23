@@ -166,6 +166,35 @@ class FakeWpdb {
         }
         return $query;
     }
+
+    public function delete(string $table, array $where, array $formats = []) {
+        $rows = $this->load();
+        $before = count($rows);
+        $rows = array_values(array_filter($rows, function($row) use ($where) {
+            foreach ($where as $k => $v) {
+                if (($row[$k] ?? null) != $v) return true;
+            }
+            return false;
+        }));
+        $this->save($rows);
+        return $before - count($rows);
+    }
+
+    public function get_results(string $query, $output = OBJECT) {
+        $rows = $this->load();
+        $result = [];
+        foreach ($rows as $row) {
+            $result[] = (object) $row;
+        }
+        usort($result, function($a, $b) {
+            return strcmp((string)($b->created_at ?? ''), (string)($a->created_at ?? ''));
+        });
+        return $result;
+    }
+
+    public function get_var($query) {
+        return $this->prefix . 'lf_lyftiloyvi_requests';
+    }
 }
 
 $wpdb = new FakeWpdb();
@@ -183,6 +212,72 @@ if (!function_exists('get_option')) {
         return $default;
     }
 }
+if (!function_exists('update_option')) {
+    function update_option($option, $value, $autoload = true) { return true; }
+}
+if (!function_exists('current_user_can')) {
+    function current_user_can($cap) { return true; }
+}
+if (!function_exists('get_current_user_id')) {
+    function get_current_user_id() { return 1; }
+}
+if (!function_exists('get_transient')) {
+    function get_transient($key) {
+        $f = sys_get_temp_dir() . '/lf_transient_' . md5($key) . '.json';
+        if (!file_exists($f)) return false;
+        $d = json_decode(file_get_contents($f), true);
+        if (!$d || (isset($d['expires']) && $d['expires'] < time())) { @unlink($f); return false; }
+        return $d['value'];
+    }
+}
+if (!function_exists('set_transient')) {
+    function set_transient($key, $value, $expiration = 0) {
+        $f = sys_get_temp_dir() . '/lf_transient_' . md5($key) . '.json';
+        file_put_contents($f, json_encode(['value' => $value, 'expires' => $expiration > 0 ? time() + $expiration : PHP_INT_MAX]));
+        return true;
+    }
+}
+if (!function_exists('delete_transient')) {
+    function delete_transient($key) {
+        @unlink(sys_get_temp_dir() . '/lf_transient_' . md5($key) . '.json');
+        return true;
+    }
+}
+if (!function_exists('wp_json_encode')) {
+    function wp_json_encode($data, $options = 0) { return json_encode($data, $options); }
+}
+if (!function_exists('esc_url')) {
+    function esc_url($url) { return htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); }
+}
+if (!function_exists('esc_js')) {
+    function esc_js($str) { return addslashes(html_entity_decode((string)$str, ENT_QUOTES, 'UTF-8')); }
+}
+if (!function_exists('__')) {
+    function __($text, $domain = 'default') { return $text; }
+}
+if (!function_exists('admin_url')) {
+    function admin_url($path = '') {
+        // Map WordPress admin URLs to local test admin URLs
+        if (strpos($path, 'page=lf-lyftiloyvi') !== false) {
+            $extra = '';
+            if (preg_match('/edit_id=(\d+)/', $path, $m)) $extra .= '&edit_id=' . $m[1];
+            return '/?lf_admin=1' . $extra;
+        }
+        return '/?lf_admin=1';
+    }
+}
+if (!function_exists('submit_button')) {
+    function submit_button($text = 'Goym', $type = 'primary', $name = 'submit', $wrap = true, $other = '') {
+        $btn = '<input type="submit" name="' . esc_attr($name) . '" class="button button-' . esc_attr($type) . '" value="' . esc_attr($text) . '" ' . $other . '>';
+        echo $wrap ? '<p class="submit">' . $btn . '</p>' : $btn;
+    }
+}
+if (!function_exists('add_menu_page')) {
+    function add_menu_page() {}
+}
+if (!function_exists('add_submenu_page')) {
+    function add_submenu_page() {}
+}
 
 // ─── Load plugin logic ───────────────────────────────────────────────────────
 
@@ -190,6 +285,7 @@ require_once __DIR__ . '/includes/lf-config.php';
 require_once __DIR__ . '/includes/lf-clubs.php';
 require_once __DIR__ . '/includes/lf-pdf.php';
 require_once __DIR__ . '/includes/lf-approvals.php';
+require_once __DIR__ . '/includes/lf-admin.php';
 
 // ─── CSS ─────────────────────────────────────────────────────────────────────
 
@@ -728,6 +824,171 @@ if (isset($_GET['lf_test_pdf'])) {
     exit;
 }
 
+// ─── Test admin page ─────────────────────────────────────────────────────────
+if (isset($_GET['lf_admin'])) {
+    global $lf_css;
+    // Handle delete
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['lf_admin_delete_id'])) {
+        $del_id = intval($_POST['lf_admin_delete_id']);
+        if ($del_id > 0) {
+            $wpdb->delete($wpdb->prefix . 'lf_lyftiloyvi_requests', ['id' => $del_id]);
+        }
+        header('Location: /?lf_admin=1');
+        exit;
+    }
+    lf_render_test_admin();
+    exit;
+}
+
+function lf_render_test_admin() {
+    global $lf_css, $wpdb;
+
+    $db_file = __DIR__ . '/test_db.json';
+    $rows = [];
+    if (file_exists($db_file)) {
+        $raw = json_decode(file_get_contents($db_file), true);
+        if (is_array($raw)) {
+            // Sort newest first
+            usort($raw, function($a, $b) {
+                return strcmp((string)($b['created_at'] ?? ''), (string)($a['created_at'] ?? ''));
+            });
+            $rows = $raw;
+        }
+    }
+
+    $status_labels = [
+        'approved'    => ['Góðkent', '#28a745'],
+        'pending'     => ['Bíðar', '#fd7e14'],
+        'pending_fss' => ['Bíðar (FSS)', '#007bff'],
+        'denied'      => ['Noktað', '#dc3545'],
+    ];
+
+    echo '<!DOCTYPE html><html lang="fo"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">';
+    echo '<title>Test Admin — Kappingarloyvi</title>';
+    echo '<style>' . $lf_css . '
+    body { background: #f1f1f1; font-family: system-ui,-apple-system,sans-serif; }
+    .admin-wrap { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem; }
+    .admin-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+    .admin-table th { background: #23282d; color: #fff; padding: 8px 10px; text-align: left; font-size: 12px; }
+    .admin-table td { padding: 8px 10px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: top; }
+    .admin-table tr:last-child td { border-bottom: none; }
+    .admin-table tr:hover td { background: #f9f9f9; }
+    .status-pill { display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; color:#fff; }
+    .btn-sm { font-size: 12px; padding: 3px 10px; border-radius: 4px; border: 1px solid #ccc; cursor: pointer; text-decoration: none; display:inline-block; }
+    .btn-danger { background: #dc3545; color: #fff; border-color: #dc3545; }
+    .btn-primary { background: #007cba; color: #fff; border-color: #007cba; }
+    .btn-link { background: none; color: #007cba; border-color: #007cba; }
+    .admin-empty { text-align: center; padding: 3rem; color: #666; }
+    h1 { color: #23282d; margin-bottom: 1rem; }
+    </style>';
+    echo '</head><body>';
+
+    echo '<div class="test-banner">&#x1F6A7;&nbsp;<strong>TESTUMHVØRVI — Admin</strong>&nbsp;&#x1F6A7;&nbsp;Lesur úr test_db.json &nbsp;|&nbsp; <a href="/" style="color:#fff;">← Aftur til formið</a></div>';
+
+    echo '<div class="admin-wrap">';
+    echo '<h1>Kappingarloyvi — Test Admin (' . count($rows) . ' umsóknir)</h1>';
+
+    if (empty($rows)) {
+        echo '<p class="admin-empty">Ongar umsóknir í test-DB enn.</p>';
+    } else {
+        echo '<table class="admin-table">';
+        echo '<thead><tr>';
+        echo '<th>#</th><th>Dagur/Tíð</th><th>Navn</th><th>Felag</th><th>Støða</th>';
+        echo '<th>Felag góðkent</th><th>Verji</th><th>FSS</th><th>PDF</th>';
+        echo '<th>Góðkenn</th><th>Strika</th>';
+        echo '</tr></thead><tbody>';
+
+        foreach ($rows as $row) {
+            $data = @unserialize($row['data'] ?? '');
+            if (!is_array($data)) $data = [];
+            $id      = (int)($row['id'] ?? 0);
+            $name    = $data['name'] ?? '—';
+            $club    = $data['club'] ?? '—';
+            $status  = $row['status'] ?? 'pending';
+            $is_minor = !empty($data['is_minor']);
+            $created = $row['created_at'] ?? '';
+
+            [$status_label, $status_color] = $status_labels[$status] ?? [$status, '#888'];
+
+            $club_approved     = !empty($data['approved_by']);
+            $guardian_approved = !empty($data['guardian_approved_by']);
+            $fss_approved      = !empty($data['fss_approved_by']);
+
+            // Approval cells
+            $felag_cell = $club_approved
+                ? '<span style="color:#28a745">&#x2714; ' . esc_html($data['approved_by']) . '</span>'
+                : (!empty($row['token'])
+                    ? '<a href="?lf_approve=' . rawurlencode($row['token']) . '" class="btn-sm btn-primary">Góðkenn</a>'
+                    : '<span style="color:#aaa">—</span>');
+
+            if (!$is_minor) {
+                $verji_cell = '<span style="color:#aaa">—</span>';
+            } elseif ($guardian_approved) {
+                $verji_cell = '<span style="color:#28a745">&#x2714; ' . esc_html($data['guardian_approved_by']) . '</span>';
+            } elseif (!empty($row['guardian_token'])) {
+                $verji_cell = '<a href="?lf_guardian_approve=' . rawurlencode($row['guardian_token']) . '" class="btn-sm btn-primary">Góðkenn</a>';
+            } else {
+                $verji_cell = '<span style="color:#aaa">—</span>';
+            }
+
+            if ($fss_approved) {
+                $fss_cell = '<span style="color:#28a745">&#x2714; ' . esc_html($data['fss_approved_by']) . '</span>';
+            } elseif (!empty($row['fss_token'])) {
+                $fss_cell = '<a href="?lf_fss_approve=' . rawurlencode($row['fss_token']) . '" class="btn-sm btn-primary">Góðkenn</a>';
+            } else {
+                $fss_cell = '<span style="color:#aaa">—</span>';
+            }
+
+            // PDF cell
+            $pdf_path = $row['pdf_path'] ?? '';
+            if (!empty($pdf_path) && file_exists($pdf_path)) {
+                $pdf_cell = '<a href="/test_pdfs/' . rawurlencode(basename($pdf_path)) . '" target="_blank" class="btn-sm btn-link">&#x1F4C4; Opna</a>';
+            } else {
+                $pdf_cell = '<span style="color:#aaa">—</span>';
+            }
+
+            echo '<tr>';
+            echo '<td>' . $id . '</td>';
+            echo '<td style="white-space:nowrap;font-size:11px;">' . esc_html($created) . '</td>';
+            echo '<td><strong>' . esc_html($name) . '</strong>' . ($is_minor ? ' <small style="color:#e67e22">(undir 18)</small>' : '') . '</td>';
+            echo '<td>' . esc_html($club) . '</td>';
+            echo '<td><span class="status-pill" style="background:' . $status_color . ';">' . esc_html($status_label) . '</span></td>';
+            echo '<td>' . $felag_cell . '</td>';
+            echo '<td>' . $verji_cell . '</td>';
+            echo '<td>' . $fss_cell . '</td>';
+            echo '<td>' . $pdf_cell . '</td>';
+            // Re-trigger all approvals (shortcut links)
+            echo '<td style="white-space:nowrap;">';
+            if (!$club_approved && !empty($row['token'])) {
+                echo '<a href="?lf_approve=' . rawurlencode($row['token']) . '" class="btn-sm btn-link" style="margin:1px 0;display:block;">Felag</a>';
+            }
+            if ($is_minor && !$guardian_approved && !empty($row['guardian_token'])) {
+                echo '<a href="?lf_guardian_approve=' . rawurlencode($row['guardian_token']) . '" class="btn-sm btn-link" style="margin:1px 0;display:block;">Verji</a>';
+            }
+            if (!$fss_approved && !empty($row['fss_token'])) {
+                echo '<a href="?lf_fss_approve=' . rawurlencode($row['fss_token']) . '" class="btn-sm btn-link" style="margin:1px 0;display:block;">FSS</a>';
+            }
+            echo '</td>';
+            // Delete
+            echo '<td>';
+            echo '<form method="post" action="/?lf_admin=1" onsubmit="return confirm(\'Strika umsókn #' . $id . '?\');" style="display:inline;">';
+            echo '<input type="hidden" name="lf_admin_delete_id" value="' . $id . '">';
+            echo '<button type="submit" class="btn-sm btn-danger">Strika</button>';
+            echo '</form>';
+            echo '</td>';
+            echo '</tr>';
+        }
+
+        echo '</tbody></table>';
+
+        echo '<p style="margin-top:1rem;">';
+        echo '<a href="?lf_clear_db=1" class="btn-sm btn-danger" onclick="return confirm(\'Strika allar umsóknir og PDF-fílur?\');">Reinsa allt</a>';
+        echo '</p>';
+    }
+
+    echo '</div></body></html>';
+}
+
 // Approval routes — call the real plugin handlers
 if (isset($_GET['lf_approve'])) {
     lf_handle_approval();
@@ -764,6 +1025,8 @@ $debug_html    = lf_render_debug_panel($_LF_DEBUG);
     Góðkenningarleinkjur virka!
     &nbsp;&nbsp;|&nbsp;&nbsp;
     <a href="?lf_test_pdf=1" target="_blank" style="color:#fff;font-weight:bold;background:rgba(0,0,0,0.25);padding:3px 10px;border-radius:4px;text-decoration:none;">&#x1F4C4; Ger test PDF</a>
+    &nbsp;&nbsp;|&nbsp;&nbsp;
+    <a href="/?lf_admin=1" style="color:#fff;font-weight:bold;background:rgba(0,0,0,0.25);padding:3px 10px;border-radius:4px;text-decoration:none;">&#x1F4E5; Admin</a>
 </div>
 
 <?= $form_html ?>
