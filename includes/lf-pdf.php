@@ -159,11 +159,11 @@ function lf_generate_pdf($data)
     $html .= '<table style="font-size:9.5px;">';
     $html .= '<tr style="background:#f0f0f0;"><th style="width:78%;">Váttan</th><th>Dagfest</th></tr>';
     $consent_labels = [
-        'Eg játti at lata meg verða kannaðan til doping-roynd',
-        'Eg játti at rinda allar útreiðslur FSS hevur havt av mær síðstu 12 mánaðirnar aftur, um eg verið testaður positivt í einari doping-roynd',
-        'Eg játti at fylgja anti-doping reglugerð hjá viðkomandi altjóða sambondum',
-        'Eg játti at Føroya Styrkisamband kann goyma eitt eintak av kappingarloyvinum',
-        'Eg játtið, at um eg skal umboða Føroyar og Merkið til eina kapping, so havi eg tikið anti-doping skeiðið, "ANTIDOPING 1 – FOR IDRÆTSUDØVERE". Og verið eg biðin um at skráseta Whereabouts. So játti eg eisini at taka skeiðið "WHEREABOUTS - EN GUIDE FOR ATLETER".',
+        'Eg játti at lata meg kanna fyri doping.',
+        'Eg játti at endurrinda FSS allar útreiðslur frá seinastu 12 mánaðunum undan brotinum, um eg verð funnin sekur í broti á anti-doping reglunar.',
+        'Eg játti at fylgja galdandi anti-doping reglum hjá ÍSF og teimum viðkomandi altjóða sambondunum, sum FSS er limur í.',
+        'Eg játti, at FSS kann goyma eitt eintak av kappingarloyvinum.',
+        'Eg játti, at eg havi lokið skeiðið „Antidoping 1 – for idrætsudøvere", áðrenn eg umboði Føroyar og Merkið í altjóða kapping. Verð eg biðin um at skráseta whereabouts, játti eg eisini at taka skeiðið „Whereabouts – en guide for atleter".',
     ];
     foreach ($consent_labels as $label) {
         $html .= '<tr><td>&#x2611; ' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</td><td style="white-space:nowrap;color:#555;">' . htmlspecialchars($consent_ts_display, ENT_QUOTES, 'UTF-8') . '</td></tr>';

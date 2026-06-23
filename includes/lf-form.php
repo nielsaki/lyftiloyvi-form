@@ -422,25 +422,25 @@ function lf_render_form()
     $output .= '<p>
         <label class="lf-consent-label">
             <input type="checkbox" name="lf_consent_1" value="1"' . ($consent_1 === '1' ? ' checked="checked"' : '') . ' required>
-            Eg játti at lata meg verða kannaðan til doping-roynd
+            Eg játti at lata meg kanna fyri doping.
         </label>
     </p>
     <p>
         <label class="lf-consent-label">
             <input type="checkbox" name="lf_consent_2" value="1"' . ($consent_2 === '1' ? ' checked="checked"' : '') . ' required>
-            Eg játti at rinda allar útreiðslur FSS hevur havt av mær síðstu 12 mánaðirnar aftur, um eg verið testaður positivt í einari doping-roynd
+            Eg játti at endurrinda FSS allar útreiðslur frá seinastu 12 mánaðunum undan brotinum, um eg verð funnin sekur í broti á anti-doping reglunar.
         </label>
     </p>
     <p>
         <label class="lf-consent-label">
             <input type="checkbox" name="lf_consent_3" value="1"' . ($consent_3 === '1' ? ' checked="checked"' : '') . ' required>
-            Eg játti at fylgja anti-doping reglugerð hjá viðkomandi altjóða sambondum
+            Eg játti at fylgja galdandi anti-doping reglum hjá ÍSF og teimum viðkomandi altjóða sambondunum, sum FSS er limur í.
         </label>
     </p>
     <p>
         <label class="lf-consent-label">
             <input type="checkbox" name="lf_consent_4" value="1"' . ($consent_4 === '1' ? ' checked="checked"' : '') . ' required>
-            Eg játti at Føroya Styrkisamband kann goyma eitt eintak av kappingarloyvinum
+            Eg játti, at FSS kann goyma eitt eintak av kappingarloyvinum.
         </label>
     </p>';
 
@@ -450,7 +450,7 @@ function lf_render_form()
     $output .= '<p>
         <label class="lf-consent-label">
             <input type="checkbox" name="lf_consent_5" value="1"' . ($consent_5 === '1' ? ' checked="checked"' : '') . ' required>
-            Eg játtið, at um eg skal umboða Føroyar og Merkið til eina kapping, so havi eg tikið anti-doping skeiðið, &ldquo;ANTIDOPING 1 &ndash; FOR IDRÆTSUDØVERE&rdquo;. Og verið eg biðin um at skráseta Whereabouts. So játti eg eisini at taka skeiðið &ldquo;WHEREABOUTS - EN GUIDE FOR ATLETER&rdquo;.
+            Eg játti, at eg havi lokið skeiðið &bdquo;Antidoping 1 &ndash; for idrætsudøvere&ldquo;, áðrenn eg umboði Føroyar og Merkið í altjóða kapping. Verð eg biðin um at skráseta whereabouts, játti eg eisini at taka skeiðið &bdquo;Whereabouts &ndash; en guide for atleter&ldquo;.
         </label>
     </p>';
 
