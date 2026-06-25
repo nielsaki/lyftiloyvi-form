@@ -198,6 +198,9 @@ function lf_reconsent_finalize($row, $data) {
     global $wpdb;
     $table = $wpdb->prefix . 'lf_kappingarloyvi_requests';
 
+    // Update valid-from date to when the last party (FSS) confirmed
+    $data['date'] = current_time('Y-m-d');
+
     $pdf_path = function_exists('lf_generate_pdf') ? lf_generate_pdf($data) : null;
 
     $wpdb->query($wpdb->prepare(
