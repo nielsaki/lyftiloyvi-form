@@ -213,6 +213,21 @@ function lf_render_admin_page() {
             $bulk_notice_msg = $updated_n === 1
                 ? '«Góðkent av felagi» er strikað á einari røð.'
                 : sprintf('«Góðkent av felagi» er strikað á %d røðum.', $updated_n);
+        } elseif ($bulk_action === 'reconsent') {
+            $ok_rc = 0; $fail_rc = 0;
+            foreach ($bulk_ids as $bid) {
+                $brow = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_name} WHERE id = %d LIMIT 1", $bid));
+                if (!$brow) { $fail_rc++; continue; }
+                $bdata = maybe_unserialize($brow->data);
+                if (!is_array($bdata)) $bdata = [];
+                if (function_exists('lf_trigger_reconsent') && lf_trigger_reconsent($brow, $bdata)) {
+                    $ok_rc++;
+                } else {
+                    $fail_rc++;
+                }
+            }
+            $bulk_notice_msg = sprintf('Nýggjar-skilmálar-beiðni er send til %d umsókna.', $ok_rc)
+                . ($fail_rc > 0 ? ' ' . sprintf('%d miseydnaðust.', $fail_rc) : '');
         } elseif ($bulk_action === 'regenerate_pdf') {
             $ok_pdf = 0;
             $fail_pdf = 0;
@@ -613,6 +628,24 @@ function lf_render_admin_page() {
             if (!empty($message)) {
                 echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($message) . '</p></div>';
             }
+            // Re-consent status panel
+            if (!empty($row->reconsent_status)) {
+                $data_for_rc = maybe_unserialize($row->data);
+                if (!is_array($data_for_rc)) $data_for_rc = [];
+                $is_minor_rc = !empty($data_for_rc['is_minor']);
+                $rc_color = ($row->reconsent_status === 'complete') ? '#e8f5e9' : '#fff8e1';
+                $rc_border = ($row->reconsent_status === 'complete') ? '#4caf50' : '#f9a825';
+                echo '<div style="background:' . $rc_color . ';border:1px solid ' . $rc_border . ';border-radius:6px;padding:10px 14px;margin-bottom:14px;max-width:760px;">';
+                echo '<strong>Re-consent staða: ' . esc_html(ucfirst($row->reconsent_status)) . '</strong>';
+                echo '<ul style="margin:6px 0 0;padding-left:1.3em;font-size:13px;">';
+                echo '<li>Íðkari: '  . (empty($row->reconsent_athlete_at)  ? '○ Bíðar' : '✓ ' . esc_html(substr($row->reconsent_athlete_at, 0, 10))) . '</li>';
+                echo '<li>Felag: '   . (empty($row->reconsent_club_at)      ? '○ Bíðar' : '✓ ' . esc_html(substr($row->reconsent_club_at, 0, 10))) . '</li>';
+                if ($is_minor_rc) {
+                    echo '<li>Verji: ' . (empty($row->reconsent_guardian_at) ? '○ Bíðar' : '✓ ' . esc_html(substr($row->reconsent_guardian_at, 0, 10))) . '</li>';
+                }
+                echo '<li>FSS: '     . (empty($row->reconsent_fss_at)       ? '○ Bíðar' : '✓ ' . esc_html(substr($row->reconsent_fss_at, 0, 10))) . '</li>';
+                echo '</ul></div>';
+            }
 
             echo '<form method="post" style="max-width:760px;">';
             wp_nonce_field('lf_admin_edit', 'lf_admin_nonce');
@@ -927,6 +960,7 @@ function lf_render_admin_page() {
     echo '<label for="lf-bulk-action" class="screen-reader-text">Margfeldis-handling</label>';
     echo '<select name="lf_bulk_action" id="lf-bulk-action">';
     echo '<option value="">Vel handling…</option>';
+    echo '<option value="reconsent">&#x21BA; Send nýggjar-skilmálar-beiðni (re-consent)</option>';
     echo '<option value="regenerate_pdf">Endurgera PDF</option>';
     echo '<option value="resend_pdf">Send PDF aftur (FSS, felag, íðkari og verji)</option>';
     echo '<option value="resend_link_club">Send góðkenningarleinkju til felags</option>';
@@ -1022,7 +1056,11 @@ function lf_render_admin_page() {
         echo '<td>' . esc_html($row->created_at) . '</td>';
         echo '<td>' . esc_html($name) . '</td>';
         echo '<td>' . esc_html($club) . '</td>';
-        echo '<td>' . esc_html($status_label) . '</td>';
+        $rc_badge = '';
+        if (!empty($row->reconsent_status) && $row->reconsent_status === 'pending') {
+            $rc_badge = ' <span title="Re-consent bíðar" style="display:inline-block;background:#f9a825;color:#fff;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;vertical-align:middle;">RC</span>';
+        }
+        echo '<td>' . esc_html($status_label) . $rc_badge . '</td>';
         echo '<td>';
         if ($row->status === 'denied') {
             $denied_header = trim($denied_role . ($denied_by ? ' (' . $denied_by . ')' : ''));
@@ -1123,6 +1161,10 @@ function lf_render_admin_page() {
                 }
                 if(action==="clear_club_approval"){
                     if(!confirm("Strika «góðkent av felagi» hjá øllum valdum røðum? Har støðan er «Góðkent» ella «Bíðar (FSS)», verður hon sett til «Bíðar».")){ e.preventDefault(); }
+                    return;
+                }
+                if(action==="reconsent"){
+                    if(!confirm("Senda nýggjar-skilmálar-beiðni til valdu umsóknirnar?\n\nHetta mun:\n• Strika gomlu PDF\n• Senda teldupost til íðkara, felag, verja og FSS við einstøkum leinkjum\n• Seta støðuna aftur til «Bíðar»\n\nAðeins velja umsóknir har skilmálarnir eru broyttir.")){ e.preventDefault(); }
                     return;
                 }
                 if(action==="regenerate_pdf"){

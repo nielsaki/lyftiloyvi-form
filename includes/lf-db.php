@@ -78,12 +78,21 @@ function lf_ensure_table_schema() {
 
     $alters = [];
 
-    if (empty($have['guardian_token']))   $alters[] = "ADD COLUMN guardian_token VARCHAR(64) DEFAULT NULL";
-    if (empty($have['fss_token']))        $alters[] = "ADD COLUMN fss_token VARCHAR(64) DEFAULT NULL";
-    if (empty($have['pdf_path']))         $alters[] = "ADD COLUMN pdf_path TEXT NOT NULL";
-    if (empty($have['status']))           $alters[] = "ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'pending'";
-    if (empty($have['approved_at']))      $alters[] = "ADD COLUMN approved_at DATETIME DEFAULT NULL";
-    if (empty($have['fss_approved_at']))  $alters[] = "ADD COLUMN fss_approved_at DATETIME DEFAULT NULL";
+    if (empty($have['guardian_token']))            $alters[] = "ADD COLUMN guardian_token VARCHAR(64) DEFAULT NULL";
+    if (empty($have['fss_token']))                 $alters[] = "ADD COLUMN fss_token VARCHAR(64) DEFAULT NULL";
+    if (empty($have['pdf_path']))                  $alters[] = "ADD COLUMN pdf_path TEXT NOT NULL";
+    if (empty($have['status']))                    $alters[] = "ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'pending'";
+    if (empty($have['approved_at']))               $alters[] = "ADD COLUMN approved_at DATETIME DEFAULT NULL";
+    if (empty($have['fss_approved_at']))           $alters[] = "ADD COLUMN fss_approved_at DATETIME DEFAULT NULL";
+    if (empty($have['reconsent_status']))          $alters[] = "ADD COLUMN reconsent_status VARCHAR(20) DEFAULT NULL";
+    if (empty($have['reconsent_athlete_token']))   $alters[] = "ADD COLUMN reconsent_athlete_token VARCHAR(64) DEFAULT NULL";
+    if (empty($have['reconsent_club_token']))      $alters[] = "ADD COLUMN reconsent_club_token VARCHAR(64) DEFAULT NULL";
+    if (empty($have['reconsent_guardian_token']))  $alters[] = "ADD COLUMN reconsent_guardian_token VARCHAR(64) DEFAULT NULL";
+    if (empty($have['reconsent_fss_token']))       $alters[] = "ADD COLUMN reconsent_fss_token VARCHAR(64) DEFAULT NULL";
+    if (empty($have['reconsent_athlete_at']))      $alters[] = "ADD COLUMN reconsent_athlete_at DATETIME DEFAULT NULL";
+    if (empty($have['reconsent_club_at']))         $alters[] = "ADD COLUMN reconsent_club_at DATETIME DEFAULT NULL";
+    if (empty($have['reconsent_guardian_at']))     $alters[] = "ADD COLUMN reconsent_guardian_at DATETIME DEFAULT NULL";
+    if (empty($have['reconsent_fss_at']))          $alters[] = "ADD COLUMN reconsent_fss_at DATETIME DEFAULT NULL";
 
     if (!empty($alters)) {
         $wpdb->query("ALTER TABLE {$table_name} " . implode(', ', $alters));

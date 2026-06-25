@@ -16,6 +16,7 @@ require_once __DIR__ . '/includes/lf-config.php';
 require_once __DIR__ . '/includes/lf-clubs.php';
 require_once __DIR__ . '/includes/lf-pdf.php';
 require_once __DIR__ . '/includes/lf-approvals.php';
+require_once __DIR__ . '/includes/lf-reconsent.php';
 require_once __DIR__ . '/includes/lf-admin.php';
 require_once __DIR__ . '/includes/lf-form.php';
 require_once __DIR__ . '/includes/lf-styles.php';
