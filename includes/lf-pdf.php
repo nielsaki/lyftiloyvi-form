@@ -163,14 +163,7 @@ function lf_generate_pdf($data, $is_test = false)
     $html .= '<h2>Váttanir</h2>';
     $html .= '<table style="font-size:9.5px;">';
     $html .= '<tr style="background:#f0f0f0;"><th style="width:78%;">Váttan</th><th>Dagfest</th></tr>';
-    $consent_labels = [
-        'Eg játti at lata meg kanna fyri doping.',
-        'Eg játti at endurrinda FSS allar útreiðslur frá seinastu 12 mánaðunum undan brotinum, um eg verð funnin sekur í broti á anti-doping reglunar.',
-        'Eg játti at fylgja galdandi anti-doping reglum hjá ÍSF og teimum viðkomandi altjóða sambondunum, sum FSS er limur í.',
-        'Eg játti, at FSS kann goyma eitt eintak av kappingarloyvinum.',
-        'Eg játti, at eg havi lokið skeiðið „Antidoping 1 – for idrætsudøvere", áðrenn eg umboði Føroyar og Merkið í altjóða kapping. Verði eg biðin um at skráseta whereabouts, játti eg eisini at taka skeiðið „Whereabouts – en guide for atleter".',
-    ];
-    foreach ($consent_labels as $label) {
+    foreach (lf_get_consent_labels() as $label) {
         $html .= '<tr><td>&#x2611; ' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</td><td style="white-space:nowrap;color:#555;">' . htmlspecialchars($consent_ts_display, ENT_QUOTES, 'UTF-8') . '</td></tr>';
     }
     $html .= '</table>';

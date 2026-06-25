@@ -4,17 +4,6 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// ─── Consent labels (must match lf-pdf.php) ───────────────────────────────
-function lf_get_consent_labels() {
-    return [
-        'Eg játti at lata meg kanna fyri doping.',
-        'Eg játti at endurrinda FSS allar útreiðslur frá seinastu 12 mánaðunum undan brotinum, um eg verð funnin sekur í broti á anti-doping reglunar.',
-        'Eg játti at fylgja galdandi anti-doping reglum hjá ÍSF og teimum viðkomandi altjóða sambondunum, sum FSS er limur í.',
-        'Eg játti, at FSS kann goyma eitt eintak av kappingarloyvinum.',
-        'Eg játti, at eg havi lokið skeiðið „Antidoping 1 – for idrætsudøvere", áðrenn eg umboði Føroyar og Merkið í altjóða kapping. Verði eg biðin um at skráseta whereabouts, játti eg eisini at taka skeiðið „Whereabouts – en guide for atleter".',
-    ];
-}
-
 // ─── Trigger ──────────────────────────────────────────────────────────────
 
 /**
@@ -456,8 +445,7 @@ function lf_reconsent_form_athlete($data, $token, $url, $status, $consent, $css)
     $h .= $status;
 
     $h .= '<h2 class="lf-form-title">Nýggjar skilmálar – kappingarloyvi</h2>';
-    $h .= '<p><small>Við at fylla kappingarloyvi út, váttar tú at tú heldur galdandi reglur hjá ÍSF og teimum altjóða sambondunum, sum Føroya Styrkisamband virkar undir, umframt kanningar fyri doping sambært hesum reglum.</small></p>';
-    $h .= '<p><small>Um tú skiftur felag, er neyðugt at fylla nýtt kappingarloyvið út.</small></p>';
+    $h .= lf_get_form_intro_html();
 
     // navn + føðingardagur
     $h .= '<div class="lf-row">';

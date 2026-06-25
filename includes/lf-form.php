@@ -318,8 +318,7 @@ function lf_render_form()
     $output .= '<input type="hidden" name="lf_form_submitted" value="1">';
 
     // Maybe you show the PDF text above in the page – selve formularen her:
-    $output .= '<p><small>Við at fylla kappingarloyvi út, váttar tú at tú heldur galdandi reglur hjá ÍSF og teimum altjóða sambondunum, sum Føroya Styrkisamband virkar undir, umframt kanningar fyri doping sambært hesum reglum.</small></p>';
-    $output .= '<p><small>Um tú skiftur felag, er neyðugt at fylla nýtt kappingarloyvið út.</small></p>';
+    $output .= lf_get_form_intro_html();
 
     $output .= '<div class="lf-row">
         <div class="lf-col">
@@ -419,40 +418,15 @@ function lf_render_form()
     // Dopingváttan tekstblokk (felags tekst úr config)
     $output .= '<p class="lf-info-block"><small>' . lf_get_doping_text() . '</small></p>';
 
-    $output .= '<p>
-        <label class="lf-consent-label">
-            <input type="checkbox" name="lf_consent_1" value="1"' . ($consent_1 === '1' ? ' checked="checked"' : '') . ' required>
-            Eg játti at lata meg kanna fyri doping.
-        </label>
-    </p>
-    <p>
-        <label class="lf-consent-label">
-            <input type="checkbox" name="lf_consent_2" value="1"' . ($consent_2 === '1' ? ' checked="checked"' : '') . ' required>
-            Eg játti at endurrinda FSS allar útreiðslur frá seinastu 12 mánaðunum undan brotinum, um eg verð funnin sekur í broti á anti-doping reglunar.
-        </label>
-    </p>
-    <p>
-        <label class="lf-consent-label">
-            <input type="checkbox" name="lf_consent_3" value="1"' . ($consent_3 === '1' ? ' checked="checked"' : '') . ' required>
-            Eg játti at fylgja galdandi anti-doping reglum hjá ÍSF og teimum viðkomandi altjóða sambondunum, sum FSS er limur í.
-        </label>
-    </p>
-    <p>
-        <label class="lf-consent-label">
-            <input type="checkbox" name="lf_consent_4" value="1"' . ($consent_4 === '1' ? ' checked="checked"' : '') . ' required>
-            Eg játti, at FSS kann goyma eitt eintak av kappingarloyvinum.
-        </label>
-    </p>';
-
-    // ADD-tekstblokk (úr config)
-    $output .= '<p class="lf-info-block">' . lf_get_add_block_html() . '</p>';
-
-    $output .= '<p>
-        <label class="lf-consent-label">
-            <input type="checkbox" name="lf_consent_5" value="1"' . ($consent_5 === '1' ? ' checked="checked"' : '') . ' required>
-            Eg játti, at eg havi lokið skeiðið &bdquo;Antidoping 1 &ndash; for idrætsudøvere&ldquo;, áðrenn eg umboði Føroyar og Merkið í altjóða kapping. Verði eg biðin um at skráseta whereabouts, játti eg eisini at taka skeiðið &bdquo;Whereabouts &ndash; en guide for atleter&ldquo;.
-        </label>
-    </p>';
+    $consent_vals = [$consent_1, $consent_2, $consent_3, $consent_4, $consent_5];
+    foreach (lf_get_consent_labels() as $i => $label) {
+        if ($i === 4) {
+            $output .= '<p class="lf-info-block">' . lf_get_add_block_html() . '</p>';
+        }
+        $n       = $i + 1;
+        $checked = ($consent_vals[$i] === '1') ? ' checked="checked"' : '';
+        $output .= '<p><label class="lf-consent-label"><input type="checkbox" name="lf_consent_' . $n . '" value="1"' . $checked . ' required> ' . esc_html($label) . '</label></p>';
+    }
 
     // Honeypot
     $output .= '<p class="lf-hp" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">
