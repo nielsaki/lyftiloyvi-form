@@ -240,15 +240,17 @@ function lf_render_admin_page() {
                 if (!is_array($bdata)) {
                     $bdata = [];
                 }
-                if (!empty($brow->pdf_path) && is_string($brow->pdf_path) && file_exists($brow->pdf_path)) {
-                    @unlink($brow->pdf_path);
+                if (!empty($brow->pdf_path) && is_string($brow->pdf_path)) {
+                    $old_paths   = $bdata['old_pdf_paths'] ?? [];
+                    $old_paths[] = $brow->pdf_path;
+                    $bdata['old_pdf_paths'] = $old_paths;
                 }
                 if (empty($bdata['consent_timestamp']) && !empty($brow->created_at)) {
                     $bdata['consent_timestamp'] = $brow->created_at;
                 }
                 $new_pdf = function_exists('lf_generate_pdf') ? lf_generate_pdf($bdata) : null;
                 if ($new_pdf && file_exists($new_pdf)) {
-                    $wpdb->update($table_name, ['pdf_path' => $new_pdf], ['id' => $bid], ['%s'], ['%d']);
+                    $wpdb->update($table_name, ['pdf_path' => $new_pdf, 'data' => maybe_serialize($bdata)], ['id' => $bid], ['%s', '%s'], ['%d']);
                     $ok_pdf++;
                 } else {
                     $fail_pdf++;
@@ -375,13 +377,17 @@ function lf_render_admin_page() {
                 // Use existing PDF unless regeneration is requested or no PDF exists
                 $pdf_path = is_string($brow->pdf_path ?? null) ? $brow->pdf_path : '';
                 if ($regen_pdf || empty($pdf_path) || !file_exists($pdf_path)) {
-                    if (!empty($pdf_path) && file_exists($pdf_path)) @unlink($pdf_path);
+                    if (!empty($pdf_path) && is_string($pdf_path)) {
+                        $bdata_old_paths   = $bdata['old_pdf_paths'] ?? [];
+                        $bdata_old_paths[] = $pdf_path;
+                        $bdata['old_pdf_paths'] = $bdata_old_paths;
+                    }
                     if (empty($bdata['consent_timestamp']) && !empty($brow->created_at)) {
                         $bdata['consent_timestamp'] = $brow->created_at;
                     }
                     $pdf_path = function_exists('lf_generate_pdf') ? lf_generate_pdf($bdata) : null;
                     if ($pdf_path && file_exists($pdf_path)) {
-                        $wpdb->update($table_name, ['pdf_path' => $pdf_path], ['id' => $bid], ['%s'], ['%d']);
+                        $wpdb->update($table_name, ['pdf_path' => $pdf_path, 'data' => maybe_serialize($bdata)], ['id' => $bid], ['%s', '%s'], ['%d']);
                     }
                 }
                 $attachments = (!empty($pdf_path) && file_exists($pdf_path)) ? [$pdf_path] : [];
@@ -598,9 +604,11 @@ function lf_render_admin_page() {
 
             // Regenerate PDF
             if (isset($_POST['lf_admin_regenerate_pdf']) && isset($_POST['lf_admin_nonce']) && wp_verify_nonce($_POST['lf_admin_nonce'], 'lf_admin_edit')) {
-                // Delete old PDF if exists
-                if (!empty($row->pdf_path) && file_exists($row->pdf_path)) {
-                    @unlink($row->pdf_path);
+                // Archive old PDF path instead of deleting
+                if (!empty($row->pdf_path) && is_string($row->pdf_path)) {
+                    $old_paths   = $data['old_pdf_paths'] ?? [];
+                    $old_paths[] = $row->pdf_path;
+                    $data['old_pdf_paths'] = $old_paths;
                 }
                 // Generate new PDF
                 if (empty($data['consent_timestamp']) && !empty($row->created_at)) {
@@ -608,7 +616,7 @@ function lf_render_admin_page() {
                 }
                 $new_pdf = lf_generate_pdf($data);
                 if ($new_pdf && file_exists($new_pdf)) {
-                    $wpdb->update($table_name, ['pdf_path' => $new_pdf], ['id' => $row->id], ['%s'], ['%d']);
+                    $wpdb->update($table_name, ['pdf_path' => $new_pdf, 'data' => maybe_serialize($data)], ['id' => $row->id], ['%s', '%s'], ['%d']);
                     $message = 'PDF er endurgjørd.';
                 } else {
                     $message = 'Kundi ikki endurgera PDF.';
@@ -712,8 +720,44 @@ function lf_render_admin_page() {
 
             echo '<hr />';
             echo '<h2>Endurgera PDF</h2>';
-            echo '<p>Strikar gomlu PDF og ger eina nýggja við goymdum upplýsingum (ókmt dags- og góðkenningarfeltini omanfyri).</p>';
-            echo '<p><button type="submit" name="lf_admin_regenerate_pdf" value="1" class="button" onclick="return confirm(\'Ert tú viss(ur)? Gomlu PDF-fílan verður strikað og ein nýggj gjørd.\');">Endurgera PDF</button></p>';
+            echo '<p>Ger eina nýggja PDF við goymdum upplýsingum (ókmt dags- og góðkenningarfeltini omanfyri). Gomla PDF-fílan verður goymd fyri dokumentatión.</p>';
+
+            // Show current PDF
+            if (!empty($row->pdf_path) && is_string($row->pdf_path)) {
+                $upload_dir_e = wp_upload_dir();
+                $bdir = $upload_dir_e['basedir'] ?? '';
+                $burl = $upload_dir_e['baseurl'] ?? '';
+                $cur_pdf_url = '';
+                if ($bdir !== '' && $burl !== '' && strpos($row->pdf_path, $bdir) === 0) {
+                    $cur_pdf_url = trailingslashit($burl) . ltrim(substr($row->pdf_path, strlen($bdir)), '/');
+                }
+                if ($cur_pdf_url) {
+                    echo '<p><strong>Núverandi PDF:</strong> <a href="' . esc_url($cur_pdf_url) . '" target="_blank" rel="noopener">' . esc_html(basename($row->pdf_path)) . '</a></p>';
+                }
+            }
+
+            // Show archived old PDFs
+            $old_pdf_paths = $data['old_pdf_paths'] ?? [];
+            if (!empty($old_pdf_paths)) {
+                $upload_dir_e = wp_upload_dir();
+                $bdir = $upload_dir_e['basedir'] ?? '';
+                $burl = $upload_dir_e['baseurl'] ?? '';
+                echo '<p><strong>Eldri PDF-fílur:</strong></p><ul style="margin:0 0 8px 1.3em;">';
+                foreach (array_reverse($old_pdf_paths) as $old_path) {
+                    if (!is_string($old_path) || $old_path === '') continue;
+                    $old_url = '';
+                    if ($bdir !== '' && $burl !== '' && strpos($old_path, $bdir) === 0) {
+                        $old_url = trailingslashit($burl) . ltrim(substr($old_path, strlen($bdir)), '/');
+                    }
+                    if ($old_url) {
+                        $exists = file_exists($old_path) ? '' : ' <em style="color:#999;">(fíla finnst ikki)</em>';
+                        echo '<li><a href="' . esc_url($old_url) . '" target="_blank" rel="noopener">' . esc_html(basename($old_path)) . '</a>' . $exists . '</li>';
+                    }
+                }
+                echo '</ul>';
+            }
+
+            echo '<p><button type="submit" name="lf_admin_regenerate_pdf" value="1" class="button" onclick="return confirm(\'Ert tú viss(ur)? Ein nýggj PDF verður gjørd. Gomla PDF-fílan verður goymd.\');">Endurgera PDF</button></p>';
 
             echo '<hr />';
             echo '<h2>Send PDF aftur</h2>';
@@ -1168,7 +1212,7 @@ function lf_render_admin_page() {
                     return;
                 }
                 if(action==="regenerate_pdf"){
-                    if(!confirm("Endurgera PDF fyri øll vald umsóknir? Galdu PDF-fílur á skrá verða strikaðar; nýggjar verða gjørðar.")){ e.preventDefault(); }
+                    if(!confirm("Endurgera PDF fyri øll vald umsóknir? Galdu PDF-fílur verða goymdar; nýggjar verða gjørðar.")){ e.preventDefault(); }
                     return;
                 }
                 if(action==="resend_pdf"){

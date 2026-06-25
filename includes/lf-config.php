@@ -51,7 +51,7 @@ function lf_get_doping_text() {
 function lf_get_add_block_html() {
     return '<small>
         <strong>Umboðan fyri Føroyar:</strong><br>
-        Um íðkarin skal umboða Føroyar ella Merkið, til eina kapping, so er krav at hava eitt virkið og fullfíggja <em>"Antidoping 1 - for idrætsudøvere"</em> skeið. Skeiðið kann gerast á hesi síðuni: <a href="https://uddannelse.antidoping.dk/" target="_blank" rel="noopener">https://uddannelse.antidoping.dk/</a>. Skal íðkarin eisini skráseta whereabouts, so er eisini krav at hava eitt virkið og fullfíggja "WHEREABOUTS - EN GUIDE FOR ATLETER" skeið.<br><br>
+        Um íðkarin skal umboða Føroyar ella Merkið, til eina kapping, so er krav at hava eitt virkið og fullfíggja <em>"Antidoping 1 - for idrætsudøvere"</em> skeið. Skeiðið kann gerast á hesi síðuni: <a href="https://uddannelse.antidoping.dk/" target="_blank" rel="noopener">https://uddannelse.antidoping.dk/</a>. Skal íðkarin eisini skráseta whereabouts, so er eisini krav at hava eitt virkið og fullfíggja "Whereabouts - en guide for atleter" skeið.<br><br>
         ADD-skeiðið gongur út eftir tvey ár.<br><br>
         Er hetta ikki fullfíggja, sleppur íðkarin ikki at luttaka til kappingar umboðandi fyri Føroyar, ella undir Merkiðnum.<br><br>
     </small>';

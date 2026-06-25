@@ -19,9 +19,11 @@ function lf_trigger_reconsent($row, $data) {
     $is_minor       = !empty($data['is_minor']);
     $guardian_email = $data['guardian_email'] ?? '';
 
-    // Delete old PDF
-    if (!empty($row->pdf_path) && is_string($row->pdf_path) && file_exists($row->pdf_path)) {
-        @unlink($row->pdf_path);
+    // Archive old PDF path instead of deleting — kept on disk for documentation
+    if (!empty($row->pdf_path) && is_string($row->pdf_path)) {
+        $old_paths   = $data['old_pdf_paths'] ?? [];
+        $old_paths[] = $row->pdf_path;
+        $data['old_pdf_paths'] = $old_paths;
     }
 
     // Fresh tokens
@@ -114,6 +116,11 @@ function lf_find_reconsent_row($token) {
  * Called after athlete submits. Sends emails to club and guardian (if minor).
  */
 function lf_reconsent_notify_club_guardian($row, $data) {
+    if (!$row) {
+        error_log('lf_reconsent_notify_club_guardian: $row is null — cannot notify');
+        return;
+    }
+
     $name           = $data['name'] ?? '';
     $club           = $data['club'] ?? '';
     $guardian_email = $data['guardian_email'] ?? '';
@@ -125,7 +132,9 @@ function lf_reconsent_notify_club_guardian($row, $data) {
     if ($club) $subject .= ' (' . $club . ')';
 
     // Club
-    if (!empty($row->reconsent_club_token)) {
+    if (empty($row->reconsent_club_token)) {
+        error_log("lf_reconsent_notify_club_guardian: reconsent_club_token is empty for row id={$row->id}");
+    } else {
         $club_link         = add_query_arg('lf_reconsent', rawurlencode($row->reconsent_club_token), $site);
         $club_chair_emails = function_exists('lf_get_club_chair_emails') ? lf_get_club_chair_emails() : [];
         $club_email        = $club_chair_emails[$club] ?? '';
@@ -137,7 +146,12 @@ function lf_reconsent_notify_club_guardian($row, $data) {
             $body .= "Íðkari {$name} hevur staðfest nýggju skilmálana fyri kappingarloyvi. Felagið verður nú biðin/ur um at góðkenna umsóknina.\n\n";
             $body .= "Klikk hér at góðkenna:\n{$club_link}\n\n";
             $body .= "Sent frá: {$site}\n";
-            wp_mail($club_email, $subject, $body);
+            $sent = wp_mail($club_email, $subject, $body);
+            if (!$sent) {
+                error_log("lf_reconsent_notify_club_guardian: wp_mail FAILED to {$club_email} for '{$club}'");
+            }
+        } else {
+            error_log("lf_reconsent_notify_club_guardian: no valid club email found for '{$club}'");
         }
     }
 
@@ -148,7 +162,10 @@ function lf_reconsent_notify_club_guardian($row, $data) {
         $body .= "Íðkari {$name} hevur staðfest nýggju skilmálana fyri kappingarloyvi. Tú verður nú biðin/ur um at góðkenna sum verji.\n\n";
         $body .= "Klikk hér at góðkenna:\n{$guardian_link}\n\n";
         $body .= "Sent frá: {$site}\n";
-        wp_mail($guardian_email, $subject, $body);
+        $sent = wp_mail($guardian_email, $subject, $body);
+        if (!$sent) {
+            error_log("lf_reconsent_notify_club_guardian: wp_mail FAILED to guardian {$guardian_email}");
+        }
     }
 }
 
